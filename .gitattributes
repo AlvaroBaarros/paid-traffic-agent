@@ -1,0 +1,11 @@
+* text=auto
+*.bat text eol=crlf
+*.sh text eol=lf
+*.command text eol=lf
+*.png binary
+
+# Fora do pacote de download (Releases)
+.github export-ignore
+test export-ignore
+docs export-ignore
+.gitattributes export-ignore

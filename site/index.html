@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Paid Traffic Agent</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐉%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>if(!window.Chart)document.write('<script src="vendor/chart.umd.js"><\/script>')</script>
+<style>
+:root{--bg:#050906;--panel:#0b120d;--panel2:#101a13;--line:#18281d;--line2:#23382a;--text:#eaf5ec;--muted:#8fa595;--dim:#5b7062;
+--accent:#22c55e;--up:#22c55e;--down:#f05252;--warn:#f59e0b;--info:#60a5fa;--violet:#a78bfa;--r:14px}
+*{box-sizing:border-box}
+html,body{margin:0;background:radial-gradient(1200px 500px at 10% -10%,rgba(34,197,94,.10),transparent 60%),var(--bg);background-attachment:fixed;color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;line-height:1.45}
+a{color:var(--info);text-decoration:none}a:hover{text-decoration:underline}
+button{font:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line2);border-radius:10px;padding:9px 11px;outline:none;width:100%}
+input:focus,select:focus{border-color:var(--accent)}
+input[type=checkbox]{width:auto;accent-color:var(--accent)}
+input[type=range]{padding:0;accent-color:var(--accent);background:none;border:none}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:28px}
+label.lb{display:block;font-size:11.5px;color:var(--muted);margin:0 0 5px;font-weight:500}
+.wrap{max-width:1320px;margin:0 auto;padding:18px 18px 70px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.02em}
+.logo .nome{background:linear-gradient(90deg,#86efac,#22c55e 55%,#4ade80);-webkit-background-clip:text;background-clip:text;color:transparent}
+.rodape{margin-top:30px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--dim);text-align:center}
+.rodape b{color:#4ade80}
+.mark{width:36px;height:36px;border-radius:10px;background:radial-gradient(circle at 30% 30%,#1f2937,#0b0f17);border:1px solid rgba(34,197,94,.45);display:grid;place-items:center;box-shadow:0 0 24px rgba(34,197,94,.3);font-size:20px}
+.pill{font-size:12px;color:var(--muted);padding:5px 10px;border:1px solid var(--line);border-radius:999px;display:inline-flex;gap:6px;align-items:center}
+.spacer{flex:1}
+.app{display:grid;grid-template-columns:262px 1fr;min-height:100vh}
+.side{position:sticky;top:0;height:100vh;overflow:auto;background:linear-gradient(180deg,#081509 0%,#050906 70%);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:6px;z-index:60}
+.menu{display:flex;flex-direction:column;gap:2px}
+.menu a{display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:10px;color:var(--muted);font-weight:600;font-size:13.5px;cursor:pointer;text-decoration:none;user-select:none}
+.menu a:hover{background:var(--panel2);color:var(--text);text-decoration:none}
+.menu a.on{background:rgba(34,197,94,.15);color:#4ade80;box-shadow:inset 3px 0 0 #22c55e}
+.menu .grp{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#6f9a7b;margin:16px 10px 5px;font-weight:700}
+.sidefoot{margin-top:auto;padding:14px 8px 4px;font-size:12px;color:var(--dim);border-top:1px solid var(--line)}
+.sidefoot b{color:#4ade80}
+#novaVersao a{display:block;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.4);color:#4ade80;border-radius:10px;padding:8px 10px;margin-bottom:10px;font-weight:600;text-decoration:none}
+.main{min-width:0}
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(5,9,6,.82);backdrop-filter:blur(10px);z-index:40;margin:0;flex-wrap:wrap}
+.topbar h2{margin:0;font-size:18px;letter-spacing:-.01em}
+.topbar .burger{display:none}
+.sideveu{display:none}
+#tNav,#aNav,#viewAnalytics .ahead{display:none!important}
+.ini-k{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
+.ini-g{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:14px}
+.ini-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+.ibox{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.ibox h3{margin:0 0 10px;font-size:15px;display:flex;gap:8px;align-items:center}
+.ibox .chart{height:260px}
+.ik{background:linear-gradient(160deg,rgba(34,197,94,.12),rgba(34,197,94,.02) 70%),var(--panel);border:1px solid rgba(34,197,94,.24);border-radius:16px;padding:12px 14px}
+.ik .l{font-size:12px;color:var(--muted)}.ik .v{font-size:24px;font-weight:800;letter-spacing:-.02em}.ik .s{font-size:11.5px;color:var(--dim)}
+.ik.big .v{color:#4ade80}
+.pos{color:#4ade80}.neg{color:var(--down)}
+.hello{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.hello h1{margin:0;font-size:22px;letter-spacing:-.02em}
+.hello h1 span{background:linear-gradient(90deg,#86efac,#22c55e);-webkit-background-clip:text;background-clip:text;color:transparent}
+.passos{display:grid;gap:8px}
+.passo{display:flex;gap:10px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-size:13px}
+.passo.ok{border-color:rgba(34,197,94,.35)}
+.lnk{color:#4ade80;cursor:pointer;font-weight:600}
+.minilista{display:grid;gap:6px;font-size:13px}
+.minilista div{display:flex;gap:8px;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:6px}
+@media(max-width:1100px){.ini-k{grid-template-columns:repeat(3,1fr)}.ini-g,.ini-3{grid-template-columns:1fr}}
+@media(max-width:900px){.app{grid-template-columns:1fr}.side{position:fixed;left:0;top:0;width:270px;transform:translateX(-105%);transition:transform .2s}.side.open{transform:none;box-shadow:0 0 60px rgba(0,0,0,.7)}.topbar .burger{display:inline-flex}.sideveu.on{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:55}.ini-k{grid-template-columns:repeat(2,1fr)}}
+.btn{border:1px solid var(--line2);background:var(--panel2);color:var(--text);padding:9px 14px;border-radius:10px;font-weight:600;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;text-decoration:none}
+.btn:hover{border-color:#474752;text-decoration:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#04130a}.btn.primary:hover{background:#2bd469}
+.btn.sm{padding:6px 10px;font-size:12.5px;border-radius:8px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.miner{background:linear-gradient(135deg,rgba(34,197,94,.10),rgba(34,197,94,.02) 60%);border:1px solid rgba(34,197,94,.28);border-radius:18px;padding:16px;margin-bottom:14px}
+.miner h1{font-size:18px;margin:0 0 3px;letter-spacing:-.01em}
+.miner p{margin:0 0 12px;color:var(--muted);font-size:13px}
+.mrow{display:grid;grid-template-columns:2.2fr .8fr 1.1fr auto auto;gap:10px;align-items:end}
+.chk{display:flex;gap:7px;align-items:center;font-size:13px;color:var(--muted);white-space:nowrap;padding-bottom:9px}
+#runBox{margin-top:12px;display:none;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:10px 12px;font-size:13px}
+#runBox.show{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spin{width:14px;height:14px;border:2px solid var(--line2);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.buscas{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.bchip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--muted);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.bchip b{color:var(--text);font-weight:600}
+.bchip.on{border-color:var(--accent);background:rgba(34,197,94,.08)}
+.bchip .esc{color:var(--up);font-weight:700}
+.bchip.err b{color:var(--down)}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.kpi .l{font-size:11.5px;color:var(--muted);font-weight:500}.kpi .v{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.filters{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;grid-template-columns:1.6fr repeat(6,1fr);gap:10px;margin-bottom:16px}
+.filters .row2{grid-column:1/-1;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.minads{display:flex;align-items:center;gap:10px;min-width:280px;flex:1;max-width:460px}
+.minads input[type=number]{width:76px;padding:6px 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s,transform .15s}
+.card:hover{border-color:var(--line2)}
+.media{position:relative;aspect-ratio:16/10;background:#0d0d10;display:grid;place-items:center;cursor:pointer;overflow:hidden}
+.media img{width:100%;height:100%;object-fit:cover;display:block}
+.media video{width:100%;height:100%;object-fit:contain;background:#000}
+.media .ph{color:var(--dim);font-size:13px;padding:20px;text-align:center}
+.play{position:absolute;width:52px;height:52px;border-radius:50%;background:rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.85);display:grid;place-items:center;color:#fff;font-size:20px;pointer-events:none}
+.tagtl{position:absolute;top:10px;left:10px;display:flex;gap:6px;flex-wrap:wrap}
+.tagbr{position:absolute;bottom:10px;right:10px}
+.st{font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:999px;letter-spacing:.02em;text-transform:uppercase;backdrop-filter:blur(6px)}
+.st.escalada{background:rgba(34,197,94,.92);color:#03140a}
+.st.escalando{background:rgba(245,158,11,.92);color:#1f1300}
+.st.rodando{background:rgba(96,165,250,.9);color:#04111f}
+.st.teste{background:rgba(60,60,70,.9);color:#d6d6dd}
+.st.estr{background:rgba(167,139,250,.92);color:#12062b}
+.cnt{font-size:11.5px;background:rgba(0,0,0,.7);color:#fff;padding:3px 8px;border-radius:8px}
+.cbody{padding:13px 14px;display:flex;flex-direction:column;gap:9px;flex:1}
+.adv{display:flex;align-items:center;gap:9px;min-width:0}
+.adv img{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--panel2);flex:none}
+.adv .n{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adv .d{font-size:12px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tit{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.m{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:7px 8px}
+.m .l{font-size:10.5px;color:var(--dim);line-height:1.2}.m .v{font-size:16px;font-weight:800}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{font-size:11px;color:var(--muted);background:var(--panel2);border:1px solid var(--line);padding:2px 7px;border-radius:999px}
+.chip.g{color:#86efac;border-color:rgba(34,197,94,.35)}
+.chip.up{color:var(--up)}.chip.down{color:var(--down)}
+.cact{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:4px}
+.cact .btn{flex:1;justify-content:center}
+.empty{text-align:center;padding:56px 20px;background:var(--panel);border:1px dashed var(--line2);border-radius:var(--r);color:var(--muted)}
+.empty h2{color:var(--text);margin:0 0 6px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-start;justify-content:center;padding:30px 12px;overflow:auto;z-index:50;backdrop-filter:blur(3px)}
+.overlay.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line2);border-radius:18px;width:100%;max-width:560px;padding:20px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.modal.wide{max-width:1040px}
+.mhead{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px}
+.mhead h3{margin:0;font-size:18px;flex:1}
+.x{background:none;border:none;color:var(--muted);font-size:24px;line-height:1;padding:0 6px}.x:hover{color:var(--text)}
+.dgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px}
+.box{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.box h4{margin:0 0 8px;font-size:13px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:13px}
+.kv span:nth-child(odd){color:var(--muted)}
+.kv span{overflow-wrap:anywhere}
+.checks{display:grid;gap:5px;font-size:13px}
+.ok{color:var(--up)}.no{color:var(--dim)}
+.crs{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.cr{background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.cr video,.cr img{width:100%;aspect-ratio:9/12;object-fit:cover;background:#000;display:block}
+.cr .ct{padding:10px;font-size:12.5px;display:flex;flex-direction:column;gap:7px;flex:1}
+.cr .tx{color:var(--muted);max-height:120px;overflow:auto;white-space:pre-wrap}
+.chartbox{height:220px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#1f1f26;border:1px solid var(--line2);padding:10px 16px;border-radius:12px;opacity:0;transition:.2s;z-index:80;pointer-events:none;max-width:92vw}
+.toast.show{opacity:1;transform:translateX(-50%)}.toast.err{border-color:#5a2a2e;color:#ffb4b4}
+.note{font-size:12px;color:var(--dim)}
+.steps{margin:0;padding-left:18px;color:var(--muted);font-size:13px}.steps li{margin:4px 0}
+code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12px}
+@media(max-width:1000px){.filters{grid-template-columns:1fr 1fr 1fr}.filters .q{grid-column:1/-1}.kpis{grid-template-columns:repeat(3,1fr)}.dgrid{grid-template-columns:repeat(3,1fr)}.mrow{grid-template-columns:1fr 1fr}.mrow .kw{grid-column:1/-1}}
+@media(max-width:600px){.filters{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.dgrid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side" id="side">
+  <div class="logo" style="padding:4px 8px 10px"><div class="mark">🐉</div><span class="nome">Paid Traffic Agent</span></div>
+  <nav class="menu" id="menu">
+    <a data-r="inicio">🏠 Início</a>
+    <div class="grp">🧬 Clonador</div>
+    <a data-r="clonador/minerar">⛏️ Minerar ofertas</a>
+    <a data-r="clonador/criativos" class="loc">✍️ Clonar criativos & copy</a>
+    <div class="grp">📣 Gerenciador de anúncios</div>
+    <a data-r="gerenciador/visao" class="loc">📊 Visão geral</a>
+    <a data-r="gerenciador/campanhas" class="loc">📋 Campanhas</a>
+    <a data-r="gerenciador/piloto" class="loc">🤖 Piloto automático</a>
+    <a data-r="gerenciador/criar" class="loc">🚀 Criar campanha</a>
+    <a data-r="gerenciador/contas" class="loc">🔌 Contas de anúncio</a>
+    <div class="grp">💰 UTMFy do Debian</div>
+    <a data-r="utmfy/dashboard" class="loc">📈 Dashboard</a>
+    <a data-r="utmfy/campanhas" class="loc">📋 Campanhas e ROI</a>
+    <a data-r="utmfy/vendas" class="loc">🧾 Vendas</a>
+    <a data-r="utmfy/criativos" class="loc">🏆 Criativos</a>
+    <a data-r="utmfy/produtos" class="loc">📦 Produtos e pagamentos</a>
+    <a data-r="utmfy/integracoes" class="loc">🔗 Integrações</a>
+  </nav>
+  <div class="sidefoot"><button class="btn sm" id="btnCfg" style="width:100%;justify-content:center;margin-bottom:10px">⚙️ Conectar GitHub</button><div id="novaVersao"></div>🐉 Feito por <b>Debian</b> · <span id="versaoApp">beta</span></div>
+</aside>
+<div class="sideveu" id="sideveu"></div>
+<div class="main">
+<header class="topbar">
+  <button class="btn sm burger" id="burger" aria-label="Menu">☰</button>
+  <h2 id="ptitulo">Início</h2>
+  <span class="pill" id="upd">carregando…</span>
+  <div class="spacer"></div>
+</header>
+<div class="wrap">
+<div id="viewInicio" hidden></div>
+<div id="viewTrafego" hidden></div>
+<div id="viewAnalytics" hidden></div>
+<div id="viewMinerar" hidden>
+
+<section class="miner">
+  <h1>O que você quer minerar?</h1>
+  <p>Digite um tema ou palavra-chave. O robô busca na Biblioteca de Anúncios do Facebook, conta os anúncios ativos, abre os funis e mostra as ofertas escaladas.</p>
+  <div class="mrow">
+    <div class="kw"><label class="lb">Tema ou palavra-chave (separe várias por vírgula)</label><input id="mKw" placeholder="ex.: emagrecer, renda extra, oração"></div>
+    <div><label class="lb">País</label><select id="mPais"></select></div>
+    <div><label class="lb">Nicho (opcional)</label><input id="mNicho" list="nichosList" placeholder="detectar sozinho"><datalist id="nichosList"></datalist></div>
+    <label class="chk"><input type="checkbox" id="mFollow" checked> acompanhar todo dia</label>
+    <button class="btn primary" id="btnMine">⛏️ Minerar agora</button>
+  </div>
+  <div id="runBox"></div>
+</section>
+
+<div class="buscas" id="buscas"></div>
+
+<section class="kpis">
+  <div class="kpi"><div class="l">Ofertas encontradas</div><div class="v" id="kO">–</div></div>
+  <div class="kpi"><div class="l">Escaladas</div><div class="v" style="color:var(--up)" id="kE">–</div></div>
+  <div class="kpi"><div class="l">Escalando agora</div><div class="v" style="color:var(--warn)" id="kG">–</div></div>
+  <div class="kpi"><div class="l">Estruturadas</div><div class="v" style="color:var(--violet)" id="kS">–</div></div>
+  <div class="kpi"><div class="l">Anunciantes</div><div class="v" id="kA">–</div></div>
+</section>
+
+<section class="filters">
+  <div class="q"><label class="lb">Buscar nos resultados</label><input id="fQ" placeholder="anunciante, domínio, copy…"></div>
+  <div><label class="lb">Palavra-chave</label><select id="fKw"></select></div>
+  <div><label class="lb">Nicho</label><select id="fNicho"></select></div>
+  <div><label class="lb">País</label><select id="fPais"></select></div>
+  <div><label class="lb">Status</label><select id="fSt"><option value="">Todos</option><option value="escalada">Escaladas</option><option value="escalando">Escalando</option><option value="rodando">Rodando</option><option value="teste">Em teste</option></select></div>
+  <div><label class="lb">Funil</label><select id="fFunil"></select></div>
+  <div><label class="lb">Checkout</label><select id="fChk"></select></div>
+  <div class="row2">
+    <div class="minads"><label class="lb" style="margin:0;white-space:nowrap">Mínimo de anúncios ativos</label><input type="range" id="fMinR" min="1" max="200" value="5"><input type="number" id="fMin" min="1" value="5"></div>
+    <label class="chk" style="padding:0"><input type="checkbox" id="fEstr"> só estruturadas</label>
+    <label class="chk" style="padding:0"><input type="checkbox" id="fVid"> só com vídeo</label>
+    <div class="spacer"></div>
+    <div style="min-width:200px"><select id="fSort"><option value="score">Mais fortes primeiro</option><option value="ads">Mais anúncios na oferta</option><option value="adv">Mais anúncios do anunciante</option><option value="dias">Rodando há mais tempo</option><option value="novas">Mais novas</option><option value="cresc">Maior crescimento</option></select></div>
+  </div>
+</section>
+
+<main id="list"></main>
+<p class="note" style="margin-top:22px">🐉 Paid Traffic Agent · Os dados vêm da Biblioteca de Anúncios pública da Meta e são atualizados pelo robô todo dia às 8h. “Anúncios na oferta” soma os anúncios ativos que usam cada criativo encontrado na busca; “do anunciante” é o total de anúncios ativos da página no país.</p>
+</div>
+</div>
+
+<div class="wrap" style="padding-top:0"><div class="rodape">🐉 <b>Paid Traffic Agent</b> · Clonador + Gerenciador de anúncios + UTMFy, tudo num site só. Feito por Debian.</div></div>
+</div><!-- .main -->
+</div><!-- .app -->
+
+<!-- Detalhe -->
+<div class="overlay" id="mDet"><div class="modal wide">
+  <div class="mhead"><div style="flex:1;min-width:0"><div class="adv" id="dAdv"></div></div><button class="btn sm" id="dModelar" style="display:none">🎯 Modelar no Tráfego</button><button class="x" data-close>×</button></div>
+  <div class="dgrid" id="dMetrics"></div>
+  <div class="two">
+    <div class="box"><h4>Funil</h4><div class="kv" id="dFunil"></div></div>
+    <div class="box"><h4 id="dEstrT">Estrutura</h4><div class="checks" id="dEstr"></div></div>
+  </div>
+  <div class="box" style="margin-bottom:14px"><h4>Histórico de anúncios ativos</h4><div class="chartbox"><canvas id="dChart"></canvas></div><div class="note" id="dHistNote"></div></div>
+  <h4 style="margin:0 0 10px">Criativos <span class="note" id="dCrN"></span></h4>
+  <div class="crs" id="dCrs"></div>
+</div></div>
+
+<!-- Config -->
+<div class="overlay" id="mCfg"><div class="modal">
+  <div class="mhead"><h3>Conectar ao GitHub</h3><button class="x" data-close>×</button></div>
+  <p class="note" style="margin-top:-6px">Com isso, o botão “Minerar agora” dispara o robô direto daqui. O token fica salvo só neste navegador.</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0">
+    <div><label class="lb">Usuário do GitHub</label><input id="cOwner" placeholder="seu-usuario"></div>
+    <div><label class="lb">Repositório</label><input id="cRepo" placeholder="minerador-ofertas"></div>
+    <div style="grid-column:1/-1"><label class="lb">Token (fine-grained)</label><input id="cTok" type="password" placeholder="github_pat_…" autocomplete="off"></div>
+  </div>
+  <ol class="steps">
+    <li>Abra <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
+    <li>Em <b>Repository access</b>, escolha <b>Only select repositories</b> → seu repositório do minerador.</li>
+    <li>Em <b>Permissions → Repository → Actions</b>, marque <b>Read and write</b>. Mais nada.</li>
+    <li>Gere, copie e cole aqui.</li>
+  </ol>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
+    <button class="btn sm" id="cClear">Remover token</button><button class="btn sm" id="cTest">Testar</button><button class="btn sm primary" id="cSave">Salvar</button>
+  </div>
+</div></div>
+
+<!-- Sem token -->
+<div class="overlay" id="mManual"><div class="modal">
+  <div class="mhead"><h3>Minerar pelo GitHub</h3><button class="x" data-close>×</button></div>
+  <ol class="steps">
+    <li>Abra a página do robô: <a id="manLink" target="_blank" rel="noopener">Actions → Minerar ofertas</a>.</li>
+    <li>Clique em <b>Run workflow</b>, digite <b id="manKw"></b> em “Tema ou palavras-chave”, escolha o país e clique no botão verde.</li>
+    <li>Em ~5–10 minutos os resultados aparecem aqui (recarregue a página).</li>
+  </ol>
+  <p class="note">Para minerar com um clique daqui mesmo, use “⚙️ Conectar GitHub”.</p>
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px"><button class="btn sm" id="manCfg">Conectar GitHub</button><a class="btn sm primary" id="manGo" target="_blank" rel="noopener">Abrir o GitHub ↗</a></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nf=new Intl.NumberFormat("pt-BR");
+const num=v=>v===null||v===undefined?"–":nf.format(v);
+const safe=u=>(typeof u==="string"&&/^https?:\/\//i.test(u))?u:"";
+const PAISES=[["BR","Brasil"],["PT","Portugal"],["US","Estados Unidos"],["ES","Espanha"],["MX","México"],["AR","Argentina"],["CO","Colômbia"],["CL","Chile"],["PE","Peru"],["GB","Reino Unido"],["CA","Canadá"],["AU","Austrália"],["DE","Alemanha"],["FR","França"],["IT","Itália"],["ALL","Todos os países"]];
+const nomePais=c=>(PAISES.find(p=>p[0]===c)||[c,c])[1];
+const ST={escalada:"Escalada",escalando:"Escalando",rodando:"Rodando",teste:"Em teste"};
+
+let toastT;function toast(m,err){const t=$("#toast");t.textContent=m;t.className="toast show"+(err?" err":"");clearTimeout(toastT);toastT=setTimeout(()=>t.className="toast",3200);}
+const LS={get(k,d){try{const v=localStorage.getItem("mo_"+k);return v===null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem("mo_"+k,JSON.stringify(v));}catch(e){}}};
+
+/* ---------- repositório ---------- */
+function repoInfo(){
+  const s=LS.get("repo",{});
+  let owner=s.owner||"",repo=s.repo||"";
+  if((!owner||!repo)&&/\.github\.io$/.test(location.hostname)){owner=owner||location.hostname.split(".")[0];repo=repo||location.pathname.split("/").filter(Boolean)[0]||(owner+".github.io");}
+  if(!owner&&DATA.repo){[owner,repo]=DATA.repo.split("/");}
+  return {owner,repo,token:LS.get("token","")};
+}
+
+/* ---------- dados ---------- */
+let DATA={buscas:{},ofertas:[]},HIST={ofertas:{},anunciantes:{}},OFERTAS=[];
+async function carregar(){
+  try{
+    const [d,h]=await Promise.all([fetch("data/ofertas.json?v="+Date.now()).then(r=>r.json()),fetch("data/historico.json?v="+Date.now()).then(r=>r.ok?r.json():{}).catch(()=>({}))]);
+    DATA=d||DATA;HIST=h||HIST;
+  }catch(e){DATA={buscas:{},ofertas:[]};}
+  // junta a mesma oferta encontrada em palavras diferentes
+  const mapa=new Map();
+  for(const o of DATA.ofertas||[]){
+    const k=o.chave;const ex=mapa.get(k);
+    if(!ex){mapa.set(k,{...o,palavras:[o.palavra]});}
+    else{if(!ex.palavras.includes(o.palavra))ex.palavras.push(o.palavra);if((o.atualizadoEm||"")>(ex.atualizadoEm||"")){const p=ex.palavras;Object.assign(ex,o,{palavras:p});}}
+  }
+  OFERTAS=[...mapa.values()];
+  const upd=DATA.atualizadoEm?new Date(DATA.atualizadoEm):null;
+  $("#upd").textContent=upd?"atualizado "+upd.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"sem dados ainda";
+  preencherFiltros();renderBuscas();render();
+  if(typeof rotaAtual!=="undefined"&&rotaAtual==="inicio"&&$("#viewInicio")&&!$("#viewInicio").hidden)renderInicio();
+}
+
+/* ---------- filtros ---------- */
+const F={q:"",kw:"",nicho:"",pais:"",st:"",funil:"",chk:"",min:LS.get("min",5),estr:false,vid:false,sort:"score"};
+function opts(sel,vals,todos,fmt){const cur=sel.value;sel.innerHTML=`<option value="">${todos}</option>`+vals.map(v=>`<option value="${esc(v)}">${esc(fmt?fmt(v):v)}</option>`).join("");if(vals.includes(cur))sel.value=cur;}
+function uniq(a){return [...new Set(a.filter(Boolean))].sort((x,y)=>String(x).localeCompare(String(y),"pt-BR"));}
+function preencherFiltros(){
+  opts($("#fKw"),uniq(OFERTAS.flatMap(o=>o.palavras)),"Todas");
+  opts($("#fNicho"),uniq(OFERTAS.map(o=>o.nicho)),"Todos");
+  opts($("#fPais"),uniq(OFERTAS.map(o=>o.pais)),"Todos",nomePais);
+  opts($("#fFunil"),uniq(OFERTAS.map(o=>o.funil&&o.funil.tipo)),"Todos");
+  opts($("#fChk"),uniq(OFERTAS.map(o=>o.funil&&o.funil.checkout)),"Todos");
+  $("#nichosList").innerHTML=uniq(["Emagrecimento","Fitness","Saúde","Beleza","Renda extra","Finanças","Relacionamento","Desenvolvimento pessoal","Espiritualidade","Idiomas","Concursos e estudos","Maternidade e infantil","Culinária","Pets","Artesanato e DIY","Tecnologia e IA",...OFERTAS.map(o=>o.nicho)]).map(n=>`<option value="${esc(n)}">`).join("");
+  const maxAds=Math.max(50,...OFERTAS.map(o=>Math.max(o.anunciosOferta||0,o.anunciosAnunciante||0)));
+  $("#fMinR").max=Math.min(1000,Math.ceil(maxAds/10)*10);
+}
+const bind=(id,k,ev="change",fn=v=>v)=>{const el=document.getElementById(id);el.addEventListener(ev,()=>{F[k]=fn(el.type==="checkbox"?el.checked:el.value);render();renderBuscas();});};
+bind("fQ","q","input");bind("fKw","kw");bind("fNicho","nicho");bind("fPais","pais");bind("fSt","st");bind("fFunil","funil");bind("fChk","chk");bind("fEstr","estr");bind("fVid","vid");bind("fSort","sort");
+function setMin(v){v=Math.max(1,Math.round(Number(v)||1));F.min=v;LS.set("min",v);$("#fMin").value=v;$("#fMinR").value=Math.min(v,Number($("#fMinR").max));render();}
+$("#fMin").addEventListener("input",e=>setMin(e.target.value));$("#fMinR").addEventListener("input",e=>setMin(e.target.value));
+$("#fMin").value=F.min;$("#fMinR").value=F.min;
+
+function filtradas(){
+  const q=F.q.trim().toLowerCase();
+  const arr=OFERTAS.filter(o=>{
+    if(Math.max(o.anunciosOferta||0,o.anunciosAnunciante||0)<F.min)return false;
+    if(F.kw&&!o.palavras.includes(F.kw))return false;
+    if(F.nicho&&o.nicho!==F.nicho)return false;
+    if(F.pais&&o.pais!==F.pais)return false;
+    if(F.st&&o.status!==F.st)return false;
+    if(F.funil&&(!o.funil||o.funil.tipo!==F.funil))return false;
+    if(F.chk&&(!o.funil||o.funil.checkout!==F.chk))return false;
+    if(F.estr&&!(o.estrutura&&o.estrutura.estruturada))return false;
+    if(F.vid&&!o.temVideo)return false;
+    if(q){const t=[o.anunciante,o.dominio,o.titulo,o.nicho,...(o.criativos||[]).map(c=>c.texto)].join(" ").toLowerCase();if(!t.includes(q))return false;}
+    return true;
+  });
+  const s={score:(a,b)=>(b.pontuacao||0)-(a.pontuacao||0),ads:(a,b)=>b.anunciosOferta-a.anunciosOferta,adv:(a,b)=>(b.anunciosAnunciante||0)-(a.anunciosAnunciante||0),dias:(a,b)=>(b.diasRodando||0)-(a.diasRodando||0),novas:(a,b)=>(a.diasRodando??1e9)-(b.diasRodando??1e9),cresc:(a,b)=>(b.crescimento??-1e9)-(a.crescimento??-1e9)}[F.sort];
+  return arr.sort(s);
+}
+
+/* ---------- render ---------- */
+function renderBuscas(){
+  const bs=Object.entries(DATA.buscas||{}).map(([k,b])=>({k,...b,palavra:b.palavra||k})).sort((a,b)=>(b.atualizadoEm||"").localeCompare(a.atualizadoEm||""));
+  $("#buscas").innerHTML=bs.map(b=>`<span class="bchip ${F.kw===b.palavra?"on":""} ${b.ok===false?"err":""}" data-kw="${esc(b.palavra)}" title="${b.ok===false?"A última busca não trouxe anúncios":esc((b.totalResultados?nf.format(b.totalResultados)+" resultados na biblioteca · ":"")+"atualizado em "+b.atualizadoEm)}"><b>${esc(b.palavra)}</b>${esc(b.pais||"")} · ${b.ofertas||0} ofertas${b.escaladas?` · <span class="esc">${b.escaladas} ${b.escaladas===1?"escalada":"escaladas"}</span>`:""}${b.acompanhando?" · 🔁":""}</span>`).join("");
+}
+$("#buscas").addEventListener("click",e=>{const c=e.target.closest("[data-kw]");if(!c)return;F.kw=F.kw===c.dataset.kw?"":c.dataset.kw;$("#fKw").value=F.kw;render();renderBuscas();});
+
+function midia(o){
+  const c=(o.criativos||[]).find(x=>x.video)||(o.criativos||[])[0];
+  if(!c)return `<div class="ph">sem prévia</div>`;
+  const img=safe(c.thumb);
+  return (img?`<img loading="lazy" src="${esc(img)}" alt="" onerror="this.remove()">`:`<div class="ph">${c.video?"vídeo":"sem prévia"}</div>`)+(c.video?`<div class="play">▶</div>`:"");
+}
+function render(){
+  const arr=filtradas();
+  $("#kO").textContent=nf.format(arr.length);
+  $("#kE").textContent=arr.filter(o=>o.status==="escalada").length;
+  $("#kG").textContent=arr.filter(o=>o.status==="escalando").length;
+  $("#kS").textContent=arr.filter(o=>o.estrutura&&o.estrutura.estruturada).length;
+  $("#kA").textContent=new Set(arr.map(o=>o.pageId)).size;
+  const el=$("#list");
+  if(!OFERTAS.length){el.innerHTML=`<div class="empty"><h2>Nenhuma oferta minerada ainda</h2><p>Digite um tema lá em cima e clique em <b>Minerar agora</b>. A primeira mineração leva de 5 a 10 minutos.</p></div>`;return;}
+  if(!arr.length){el.innerHTML=`<div class="empty"><h2>Nada com esses filtros</h2><p>Tente baixar o mínimo de anúncios ou limpar os filtros.</p></div>`;return;}
+  el.innerHTML=`<div class="grid">`+arr.slice(0,400).map(o=>{
+    const f=o.funil||{},e=o.estrutura||{};
+    const c=(o.criativos||[]).find(x=>x.video);
+    const vid=c?(safe(c.videoSalvo)||safe(c.video.hd)||safe(c.video.sd)):"";
+    const cresc=o.crescimento===null||o.crescimento===undefined?"":`<span class="chip ${o.crescimento>=0?"up":"down"}">${o.crescimento>0?"▲ +":o.crescimento<0?"▼ ":""}${o.crescimento}% em 7d</span>`;
+    return `<article class="card" data-k="${esc(o.chave)}">
+      <div class="media" data-play>${midia(o)}
+        <div class="tagtl"><span class="st ${o.status}">${ST[o.status]||o.status}</span>${e.estruturada?`<span class="st estr">Estruturada</span>`:""}</div>
+        ${o.criativos&&o.criativos[0]&&o.criativos[0].criativosIguais>1?`<div class="tagbr"><span class="cnt">${o.criativos[0].criativosIguais} anúncios com este criativo</span></div>`:""}
+      </div>
+      <div class="cbody">
+        <div class="adv">${safe(o.avatar)?`<img src="${esc(o.avatar)}" alt="" onerror="this.style.visibility='hidden'">`:""}<div style="min-width:0"><div class="n">${esc(o.anunciante||"Anunciante")}</div><div class="d">${esc(o.dominio||"sem link")}</div></div></div>
+        <div class="tit">${esc(o.titulo||((o.criativos||[])[0]||{}).texto||"")}</div>
+        <div class="metrics">
+          <div class="m"><div class="l">Anúncios na oferta</div><div class="v">${num(o.anunciosOferta)}</div></div>
+          <div class="m"><div class="l">Do anunciante</div><div class="v">${num(o.anunciosAnunciante)}</div></div>
+          <div class="m"><div class="l">Rodando há</div><div class="v">${o.diasRodando===null||o.diasRodando===undefined?"–":o.diasRodando+"d"}</div></div>
+        </div>
+        <div class="chips"><span class="chip">${esc(o.nicho||"Outros")}</span><span class="chip">${esc(o.pais)}</span>${f.tipo?`<span class="chip g">${esc(f.tipo)}</span>`:""}${f.checkout?`<span class="chip g">${esc(f.checkout)}</span>`:""}${cresc}</div>
+        <div class="cact">
+          <button class="btn sm" data-det>Detalhes</button>
+          ${safe(o.link)?`<a class="btn sm" href="${esc(o.link)}" target="_blank" rel="noopener">Funil ↗</a>`:""}
+          ${vid?`<a class="btn sm" href="${esc(vid)}" target="_blank" rel="noopener" download>⬇ Vídeo</a>`:""}
+          <a class="btn sm" href="${esc(safe(o.biblioteca))}" target="_blank" rel="noopener">Biblioteca ↗</a>
+        </div>
+      </div></article>`;}).join("")+`</div>`+(arr.length>400?`<p class="note">Mostrando 400 de ${arr.length}. Use os filtros para refinar.</p>`:"");
+}
+$("#list").addEventListener("click",e=>{
+  const card=e.target.closest(".card");if(!card)return;
+  const o=OFERTAS.find(x=>x.chave===card.dataset.k);if(!o)return;
+  if(e.target.closest("[data-det]")){abrirDetalhe(o);return;}
+  const m=e.target.closest("[data-play]");
+  if(m){const c=(o.criativos||[]).find(x=>x.video);const src=c&&(safe(c.videoSalvo)||safe(c.video.hd)||safe(c.video.sd));
+    if(src&&!m.querySelector("video")){m.innerHTML=`<video controls autoplay playsinline src="${esc(src)}"></video>`;m.querySelector("video").addEventListener("error",()=>{m.innerHTML=`<div class="ph">O link do vídeo expirou. Ele volta na próxima mineração${c.videoSalvo?"":" — ou veja na biblioteca"}.</div>`;});}
+    else if(!src)abrirDetalhe(o);}
+});
+
+/* ---------- detalhe ---------- */
+let chart=null,ofertaAberta=null;
+function abrirDetalhe(o){
+  ofertaAberta=o;$("#dModelar").style.display=LOCAL?"":"none";
+  const f=o.funil||{},e=o.estrutura||{sinais:{},pontos:0};
+  $("#dAdv").innerHTML=`${safe(o.avatar)?`<img src="${esc(o.avatar)}" style="width:40px;height:40px" alt="">`:""}<div style="min-width:0"><div class="n" style="font-size:17px">${esc(o.anunciante)} <span class="st ${o.status}" style="vertical-align:middle;margin-left:6px">${ST[o.status]}</span>${e.estruturada?` <span class="st estr" style="vertical-align:middle">Estruturada</span>`:""}</div><div class="d">${esc(o.titulo||"")} · ${esc(o.nicho||"")} · ${esc(nomePais(o.pais))} · palavras: ${esc((o.palavras||[o.palavra]).join(", "))}</div></div>`;
+  const met=(l,v)=>`<div class="m"><div class="l">${l}</div><div class="v">${v}</div></div>`;
+  $("#dMetrics").innerHTML=met("Anúncios na oferta",num(o.anunciosOferta))+met("Anúncios do anunciante",num(o.anunciosAnunciante))+met("Criativos diferentes",num(o.criativosDiferentes))+met("Rodando há",o.diasRodando!=null?o.diasRodando+" dias":"–")+met("Desde",o.inicioMaisAntigo?new Date(o.inicioMaisAntigo+"T12:00").toLocaleDateString("pt-BR"):"–")+met("Crescimento 7d",o.crescimento!=null?(o.crescimento>0?"+":"")+o.crescimento+"%":"–");
+  const lk=(u,t)=>safe(u)?`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t||u)}</a>`:"–";
+  $("#dFunil").innerHTML=`<span>Link do anúncio</span><span>${lk(o.link)}</span><span>Página final</span><span>${lk(f.urlFinal)}</span><span>Tipo de funil</span><span>${esc(f.tipo||"não analisado")}</span><span>Checkout</span><span>${esc(f.checkout||"não encontrado")}</span><span>Link do checkout</span><span>${lk(f.linkCheckout)}</span><span>Pixel da Meta</span><span>${f.urlFinal?(f.pixelMeta?"sim":"não"):"–"}</span><span>Título da página</span><span>${esc(f.titulo||"–")}</span><span>Biblioteca</span><span>${lk(o.biblioteca,"Todos os anúncios do anunciante ↗")}</span>`;
+  const s=e.sinais||{};const ck=(b,t)=>`<div class="${b?"ok":"no"}">${b?"✔":"○"} ${t}</div>`;
+  $("#dEstrT").textContent=`Estrutura · ${e.pontos||0}/5 sinais`;
+  $("#dEstr").innerHTML=ck(s.paginaPropria,"Tem página própria (não vai direto pro WhatsApp)")+ck(s.checkout,"Checkout identificado")+ck(s.pixel,"Pixel da Meta instalado")+ck(s.variosCriativos,"3 ou mais criativos diferentes")+ck(s.rodando7dias,"Rodando há 7 dias ou mais")+`<div class="note" style="margin-top:6px">4 ou mais sinais = oferta estruturada (funil completo e validada pelo tempo).</div>`;
+  // criativos
+  const crs=o.criativos||[];
+  $("#dCrN").textContent=`· ${crs.length} mostrados`;
+  $("#dCrs").innerHTML=crs.map((c,i)=>{const v=c.video?(safe(c.videoSalvo)||safe(c.video.hd)||safe(c.video.sd)):"";
+    return `<div class="cr">${v?`<video controls preload="none" playsinline poster="${esc(safe(c.thumb))}" src="${esc(v)}"></video>`:safe(c.thumb)?`<img loading="lazy" src="${esc(c.thumb)}" alt="">`:""}
+    <div class="ct"><div><b>${num(c.criativosIguais)}</b> anúncio${c.criativosIguais>1?"s":""} com este criativo · desde ${c.inicio?new Date(c.inicio+"T12:00").toLocaleDateString("pt-BR"):"–"}</div>
+    ${c.titulo?`<div><b>${esc(c.titulo)}</b></div>`:""}<div class="tx">${esc(c.texto||"(sem texto)")}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:auto">${v?`<a class="btn sm" href="${esc(v)}" target="_blank" rel="noopener" download>⬇ ${c.videoSalvo?"Baixar vídeo":"Abrir vídeo"}</a>`:""}<button class="btn sm" data-copy="${i}">Copiar copy</button><a class="btn sm" href="https://www.facebook.com/ads/library/?id=${encodeURIComponent(c.id)}" target="_blank" rel="noopener">Anúncio ↗</a></div>
+    ${c.videoSalvo?`<div class="note">✔ cópia guardada no seu GitHub</div>`:v?`<div class="note">Link do Facebook (expira em alguns dias)</div>`:""}</div></div>`;}).join("")||`<p class="note">Sem criativos.</p>`;
+  $("#dCrs").onclick=async ev=>{const b=ev.target.closest("[data-copy]");if(!b)return;const c=crs[Number(b.dataset.copy)];try{await navigator.clipboard.writeText([c.titulo,c.texto].filter(Boolean).join("\n\n"));toast("Copy copiada ✓");}catch(e){toast("Não consegui copiar.",true);}};
+  // histórico
+  const so=(HIST.ofertas||{})[o.chave]||{},sa=(HIST.anunciantes||{})[o.pageId]||{};
+  const dias=[...new Set([...Object.keys(so),...Object.keys(sa)])].sort();
+  $("#dHistNote").textContent=dias.length<2?"O histórico aparece a partir do segundo dia de mineração.":"";
+  openM("mDet");
+  if(typeof Chart!=="undefined"){
+    if(chart)chart.destroy();
+    chart=new Chart($("#dChart"),{type:"line",data:{labels:dias.map(d=>d.slice(8,10)+"/"+d.slice(5,7)),datasets:[
+      {label:"Anúncios na oferta",data:dias.map(d=>so[d]??null),borderColor:"#22c55e",backgroundColor:"rgba(34,197,94,.15)",fill:true,tension:.3,spanGaps:true,pointRadius:3},
+      {label:"Anúncios do anunciante",data:dias.map(d=>sa[d]??null),borderColor:"#60a5fa",tension:.3,spanGaps:true,pointRadius:3,borderDash:[5,4]}]},
+      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{labels:{color:"#8d8d9a",boxWidth:12}}},scales:{x:{ticks:{color:"#8d8d9a"},grid:{color:"rgba(255,255,255,.04)"}},y:{beginAtZero:true,ticks:{color:"#8d8d9a",precision:0},grid:{color:"rgba(255,255,255,.06)"}}}}});
+  }
+}
+
+/* ---------- modais ---------- */
+function openM(id){document.getElementById(id).classList.add("open");}
+function closeM(id){const el=document.getElementById(id);el.classList.remove("open");el.querySelectorAll("video").forEach(v=>v.pause());}
+document.querySelectorAll(".overlay").forEach(ov=>ov.addEventListener("click",e=>{if(e.target===ov||e.target.closest("[data-close]"))closeM(ov.id);}));
+document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".overlay.open").forEach(o=>closeM(o.id));});
+
+/* ---------- config ---------- */
+$("#btnCfg").onclick=()=>{const r=repoInfo();$("#cOwner").value=r.owner;$("#cRepo").value=r.repo;$("#cTok").value=r.token;openM("mCfg");};
+$("#cSave").onclick=()=>{LS.set("repo",{owner:$("#cOwner").value.trim(),repo:$("#cRepo").value.trim()});LS.set("token",$("#cTok").value.trim());closeM("mCfg");toast("Salvo ✓");atualizarBotao();};
+$("#cClear").onclick=()=>{LS.set("token","");$("#cTok").value="";toast("Token removido");atualizarBotao();};
+$("#cTest").onclick=async()=>{const o=$("#cOwner").value.trim(),r=$("#cRepo").value.trim(),t=$("#cTok").value.trim();
+  try{const res=await fetch(`https://api.github.com/repos/${encodeURIComponent(o)}/${encodeURIComponent(r)}/actions/workflows/minerar.yml`,{headers:{Authorization:"Bearer "+t,Accept:"application/vnd.github+json"}});
+    toast(res.ok?"Conexão OK ✓ — pode minerar":"Falhou ("+res.status+"). Confira usuário, repositório e permissão de Actions.",!res.ok);}catch(e){toast("Não consegui falar com o GitHub.",true);}};
+function atualizarBotao(){$("#btnCfg").textContent=repoInfo().token?"⚙️ GitHub conectado":"⚙️ Conectar GitHub";}
+
+/* ---------- minerar ---------- */
+$("#mPais").innerHTML=PAISES.map(([c,n])=>`<option value="${c}">${n}</option>`).join("");
+$("#mPais").value=LS.get("pais","BR");$("#mPais").onchange=()=>LS.set("pais",$("#mPais").value);
+$("#mKw").addEventListener("keydown",e=>{if(e.key==="Enter")$("#btnMine").click();});
+/* ---------- modo computador (servidor.mjs) ---------- */
+let LOCAL=false;
+async function detectarLocal(){
+  if(!/^(localhost|127\.0\.0\.1)$/.test(location.hostname))return;
+  try{const r=await fetch("/api/status",{cache:"no-store"});const j=await r.json();
+    if(j&&j.local){LOCAL=true;$("#btnCfg").style.display="none";
+      if(j.versao){$("#versaoApp").textContent="v"+j.versao.atual;if(j.versao.nova)$("#novaVersao").innerHTML=`<a href="${esc(j.versao.link)}" target="_blank" rel="noopener">⬆️ Nova versão v${esc(j.versao.nova)} disponível</a>`;}
+      const pill=document.createElement("span");pill.className="pill";pill.textContent="💻 rodando no seu computador";$("#upd").after(pill);
+      if(j.rodando)acompanharLocal(j.palavras);}}catch(e){}
+}
+async function minerarLocal(kw){
+  $("#btnMine").disabled=true;
+  try{
+    const r=await fetch("/api/minerar",{method:"POST",headers:{"Content-Type":"application/json","X-Minerador":"1"},body:JSON.stringify({palavras:kw,pais:$("#mPais").value,nicho:$("#mNicho").value.trim(),acompanhar:$("#mFollow").checked})});
+    const j=await r.json();
+    if(!j.ok){toast(j.mensagem||"Já existe uma mineração rodando.",true);}
+    acompanharLocal(kw);
+  }catch(e){status("❌ Não consegui falar com o minerador. A janela do servidor ainda está aberta?");$("#btnMine").disabled=false;}
+}
+function acompanharLocal(kw){
+  $("#btnMine").disabled=true;
+  const t0=Date.now();
+  const tick=async()=>{
+    let j=null;try{j=await (await fetch("/api/status",{cache:"no-store"})).json();}catch(e){}
+    if(!j){status("❌ O servidor parou de responder.");$("#btnMine").disabled=false;return;}
+    const ult=(j.log||[]).filter(l=>l.trim()).slice(-1)[0]||"preparando o navegador…";
+    if(j.rodando){status(`<div class="spin"></div> Minerando “${esc(j.palavras||kw)}”… ${Math.floor((Date.now()-t0)/60000)} min · <span class="note">${esc(ult)}</span>`);return setTimeout(tick,3000);}
+    await carregar();
+    if(kw&&!/acompanhadas/.test(kw)){F.kw=kw.split(",")[0].trim().toLowerCase();preencherFiltros();$("#fKw").value=F.kw;render();renderBuscas();}
+    status(j.ok?`✅ Pronto! <span class="note">${esc(ult)}</span>`:`❌ O robô terminou com erro: <span class="note">${esc(ult)}</span>`);
+    if(j.ok)toast("Mineração concluída ✓");
+    $("#btnMine").disabled=false;
+  };
+  setTimeout(tick,1500);
+}
+
+$("#btnMine").onclick=async()=>{
+  const kw=$("#mKw").value.trim();
+  if(!kw){toast("Digite um tema ou palavra-chave.",true);$("#mKw").focus();return;}
+  if(LOCAL)return minerarLocal(kw);
+  const r=repoInfo();
+  const wfUrl=r.owner&&r.repo?`https://github.com/${r.owner}/${r.repo}/actions/workflows/minerar.yml`:"https://github.com";
+  if(!r.token||!r.owner||!r.repo){$("#manKw").textContent=kw;$("#manLink").href=wfUrl;$("#manGo").href=wfUrl;openM("mManual");return;}
+  const inicio=new Date(Date.now()-60000).toISOString();
+  $("#btnMine").disabled=true;
+  status(`<div class="spin"></div> Enviando “${esc(kw)}” para o robô…`);
+  try{
+    const res=await fetch(`https://api.github.com/repos/${encodeURIComponent(r.owner)}/${encodeURIComponent(r.repo)}/actions/workflows/minerar.yml/dispatches`,{method:"POST",headers:{Authorization:"Bearer "+r.token,Accept:"application/vnd.github+json","Content-Type":"application/json"},
+      body:JSON.stringify({ref:LS.get("branch","main"),inputs:{palavras:kw,pais:$("#mPais").value,nicho:$("#mNicho").value.trim(),acompanhar:$("#mFollow").checked}})});
+    if(res.status===422){const t=await res.text();if(/ref/i.test(t)){LS.set("branch",LS.get("branch","main")==="main"?"master":"main");}throw new Error("O GitHub recusou o pedido (422). Tente de novo.");}
+    if(!res.ok)throw new Error("O GitHub respondeu "+res.status+". Confira o token em ⚙️.");
+    acompanharExecucao(r,kw,inicio);
+  }catch(e){status(`❌ ${esc(e.message)}`);$("#btnMine").disabled=false;}
+};
+function status(html){const b=$("#runBox");b.innerHTML=html;b.className=html?"show":"";}
+async function acompanharExecucao(r,kw,inicio){
+  const api=`https://api.github.com/repos/${encodeURIComponent(r.owner)}/${encodeURIComponent(r.repo)}/actions/runs?event=workflow_dispatch&per_page=5&created=>${inicio}`;
+  const t0=Date.now();
+  const tick=async()=>{
+    let run=null;
+    try{const res=await fetch(api,{headers:{Authorization:"Bearer "+r.token,Accept:"application/vnd.github+json"}});const j=await res.json();run=(j.workflow_runs||[])[0]||null;}catch(e){}
+    const min=Math.floor((Date.now()-t0)/60000);
+    if(!run){status(`<div class="spin"></div> Na fila do GitHub… (${min} min)`);return setTimeout(tick,10000);}
+    const link=`<a href="${esc(run.html_url)}" target="_blank" rel="noopener">ver o robô trabalhando ↗</a>`;
+    if(run.status!=="completed"){status(`<div class="spin"></div> Minerando “${esc(kw)}”… ${min} min · costuma levar 5–10 min · ${link}`);return setTimeout(tick,15000);}
+    if(run.conclusion==="success"){
+      status(`<div class="spin"></div> Mineração concluída. Publicando o painel…`);
+      await new Promise(x=>setTimeout(x,45000));
+      await carregar();
+      F.kw=kw.split(",")[0].trim().toLowerCase();preencherFiltros();$("#fKw").value=F.kw;render();renderBuscas();
+      status(`✅ Pronto! Resultados de “${esc(kw)}” abaixo. ${link}`);toast("Mineração concluída ✓");
+    }else status(`❌ O robô terminou com erro (${esc(run.conclusion)}). ${link}`);
+    $("#btnMine").disabled=false;
+  };
+  setTimeout(tick,6000);
+}
+
+/* ---------- abas Minerar / Tráfego ---------- */
+let trafegoIniciado=false;
+function mostrar(view){
+  $("#viewInicio").hidden=view!=="inicio";$("#viewMinerar").hidden=view!=="minerar";$("#viewTrafego").hidden=view!=="trafego";$("#viewAnalytics").hidden=view!=="analytics";
+  const soLocal=(alvo,nome)=>{$(alvo).innerHTML=`<div class="empty"><h2>${nome} roda no seu computador</h2><p>Ele usa as suas contas de anúncio e as suas vendas, então os dados e tokens ficam só na sua máquina. Abra o Minerador pelo <b>iniciar-windows.bat</b> ou <b>iniciar-mac.command</b> e use em <b>http://localhost:3000</b>.</p></div>`;};
+  if(view==="trafego"){
+    if(!LOCAL)return soLocal("#viewTrafego","O agente de tráfego");
+    if(!trafegoIniciado&&window.MO_T){trafegoIniciado=true;window.MO_T.iniciar();}
+  }
+  if(view==="analytics"){
+    if(!LOCAL)return soLocal("#viewAnalytics","O Debian Analytics");
+    if(!analyticsIniciado&&window.MO_A){analyticsIniciado=true;window.MO_A.iniciar();}
+  }
+}
+let analyticsIniciado=false;
+function $$v(s){return [...document.querySelectorAll(s)];}
+
+/* ---------- site único: rotas da barra lateral ---------- */
+const ROTAS={
+  "inicio":{t:"Início",v:"inicio"},
+  "clonador/minerar":{t:"Clonador · Minerar ofertas",v:"minerar"},
+  "clonador/criativos":{t:"Clonador · Clonar criativos & copy",v:"trafego",sub:"criativos"},
+  "gerenciador/visao":{t:"Gerenciador de anúncios · Visão geral",v:"trafego",sub:"visao"},
+  "gerenciador/campanhas":{t:"Gerenciador de anúncios · Campanhas",v:"trafego",sub:"campanhas"},
+  "gerenciador/piloto":{t:"Gerenciador de anúncios · Piloto automático",v:"trafego",sub:"piloto"},
+  "gerenciador/criar":{t:"Gerenciador de anúncios · Criar campanha",v:"trafego",sub:"criar"},
+  "gerenciador/contas":{t:"Gerenciador de anúncios · Contas de anúncio",v:"trafego",sub:"conexoes"},
+  "utmfy/dashboard":{t:"UTMFy · Dashboard",v:"analytics",sub:"dashboard"},
+  "utmfy/campanhas":{t:"UTMFy · Campanhas e ROI",v:"analytics",sub:"campanhas"},
+  "utmfy/vendas":{t:"UTMFy · Vendas",v:"analytics",sub:"vendas"},
+  "utmfy/criativos":{t:"UTMFy · Criativos",v:"analytics",sub:"criativos"},
+  "utmfy/produtos":{t:"UTMFy · Produtos e pagamentos",v:"analytics",sub:"produtos"},
+  "utmfy/integracoes":{t:"UTMFy · Integrações",v:"analytics",sub:"integracoes"},
+};
+let rotaAtual="";
+function marcarMenu(rota,empilhar){
+  rotaAtual=rota;
+  $$v("#menu a").forEach(a=>a.classList.toggle("on",a.dataset.r===rota));
+  const r=ROTAS[rota];if(r)$("#ptitulo").textContent=r.t;
+  if(location.hash!=="#"+rota){if(empilhar)history.pushState(null,"","#"+rota);else history.replaceState(null,"","#"+rota);}
+  LS.set("rota",rota);
+}
+function ir(rota,daHistoria){
+  const r=ROTAS[rota]||ROTAS["inicio"];rota=ROTAS[rota]?rota:"inicio";
+  const empilhar=!daHistoria&&!!rotaAtual&&rotaAtual!==rota;
+  if(empilhar)history.pushState(null,"","#"+rota);
+  if(r.sub){if(r.v==="trafego"&&window.MO_T)window.MO_T.irPara(r.sub);if(r.v==="analytics"&&window.MO_A)window.MO_A.ir(r.sub);}
+  marcarMenu(rota);
+  mostrar(r.v);
+  if(r.v==="inicio")renderInicio();
+  $("#side").classList.remove("open");$("#sideveu").classList.remove("on");
+  window.scrollTo(0,0);
+}
+$("#menu").onclick=e=>{const a=e.target.closest("[data-r]");if(a)ir(a.dataset.r);};
+$("#burger").onclick=()=>{$("#side").classList.add("open");$("#sideveu").classList.add("on");};
+$("#sideveu").onclick=()=>{$("#side").classList.remove("open");$("#sideveu").classList.remove("on");};
+addEventListener("popstate",()=>{const h=location.hash.slice(1)||"inicio";if(h!==rotaAtual&&ROTAS[h])ir(h,true);});
+addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(h&&h!==rotaAtual&&ROTAS[h])ir(h,true);});
+$("#dModelar").onclick=()=>{if(!ofertaAberta||!window.MO_T)return;closeM("mDet");window.MO_T.adicionarReferencia(ofertaAberta);ir("clonador/criativos");};
+window.MO={toast,ofertas:()=>OFERTAS,ir:(r)=>ir(r),sincronizarMenu:(r)=>{if(ROTAS[r])marcarMenu(r);},mostrar:(v)=>ir(v==="trafego"?"gerenciador/visao":v==="analytics"?"utmfy/dashboard":"clonador/minerar")};
+
+/* ---------- Início: resumo das 3 ferramentas ---------- */
+let chIni1=null,chIni2=null;
+const brlI=n=>(n===null||n===undefined||isNaN(n))?"–":"R$ "+Number(n).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const pctI=(n,s)=>(n===null||n===undefined||isNaN(n))?"–":(s&&n>0?"+":"")+n.toFixed(1).replace(".",",")+"%";
+const corI=n=>n>0?"pos":n<0?"neg":"";
+async function apiI(u){const r=await fetch(u,{headers:{"X-Minerador":"1"},cache:"no-store"});if(!r.ok)throw new Error("erro");return r.json();}
+async function renderInicio(){
+  const el=$("#viewInicio");
+  const escaladas=OFERTAS.filter(o=>o.status==="escalada");
+  const blocoClonador=`<div class="ibox"><h3>🧬 Clonador</h3>
+    <div class="minilista"><div><span>Ofertas mineradas</span><b>${nf.format(OFERTAS.length)}</b></div><div><span>Escaladas</span><b class="pos">${nf.format(escaladas.length)}</b></div><div><span>Estruturadas</span><b>${nf.format(OFERTAS.filter(o=>o.estrutura&&o.estrutura.estruturada).length)}</b></div></div>
+    <div style="margin-top:10px;font-size:13px">${escaladas.sort((a,b)=>(b.pontuacao||0)-(a.pontuacao||0)).slice(0,3).map(o=>`<div style="margin-top:6px">🔥 <b>${esc(o.anunciante)}</b> <span class="note">${esc(o.titulo||o.dominio||"")} · ${o.anunciosOferta} anúncios</span></div>`).join("")||`<span class="note">Minere um tema para ver as ofertas escaladas.</span>`}</div>
+    <div style="display:flex;gap:8px;margin-top:12px"><input id="iniKw" placeholder="minerar um tema…"><button class="btn sm primary" id="iniMinerar">⛏️</button></div></div>`;
+  if(!LOCAL){
+    el.innerHTML=`<div class="hello"><h1>Bem-vindo ao <span>Paid Traffic Agent</span> 🐉</h1></div><div class="ini-3">${blocoClonador}<div class="ibox" style="grid-column:span 2"><h3>💻 Gerenciador de anúncios e UTMFy</h3><p class="note">Essas duas partes rodam no seu computador porque usam as suas contas de anúncio e as suas vendas. Abra pelo <b>iniciar-windows.bat</b> ou <b>iniciar-mac.command</b> e use em <b>http://localhost:3000</b>.</p></div></div>`;
+    ligarIni();return;
+  }
+  el.innerHTML=`<div class="ibox"><div class="spin" style="display:inline-block"></div> Carregando o resumo…</div>`;
+  let hoje=null,mes=null,est={},cfg={status:{},regras:{}},integ={};
+  try{[hoje,mes,est,cfg,integ]=await Promise.all([apiI("/api/analytics/relatorio?periodo=hoje"),apiI("/api/analytics/relatorio?periodo=30d"),apiI("/api/trafego/estado"),apiI("/api/trafego/config"),apiI("/api/analytics/integracoes")]);}catch(e){}
+  const t=hoje?hoje.total:{};
+  const pend=(est.pendentes||[]).length;
+  const passos=[
+    [!!(cfg.status&&(cfg.status.meta||cfg.status.google)),"Conectar a conta de anúncios (Meta/Google)","gerenciador/contas"],
+    [!!(integ.status&&integ.status.worker),"Ligar o receptor de vendas 24h (Cloudflare grátis)","utmfy/integracoes"],
+    [!!(integ.totalVendas),"Colar os webhooks do checkout (Hotmart, Kiwify, Cakto…)","utmfy/integracoes"],
+    [cfg.regras&&cfg.regras.fonteConversoes==="vendas","Deixar o gerenciador decidir pelas vendas reais","gerenciador/piloto"],
+  ];
+  const faltam=passos.filter(p=>!p[0]).length;
+  const camp=hoje&&hoje.criativos.melhores.find(a=>a.vendas>0&&a.lucro>0);
+  el.innerHTML=`
+    <div class="hello"><h1>Bem-vindo ao <span>Paid Traffic Agent</span> 🐉</h1><div class="spacer"></div><span class="note">Hoje · ${new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"})}</span><button class="btn sm primary" id="iniSync">↻ Atualizar vendas e gastos</button></div>
+    <div class="ini-k">
+      <div class="ik big"><div class="l">Faturamento hoje</div><div class="v">${brlI(t.liquido)}</div><div class="s">${nf.format(t.vendas||0)} venda(s)</div></div>
+      <div class="ik"><div class="l">Gasto hoje</div><div class="v">${brlI(t.gasto)}</div></div>
+      <div class="ik"><div class="l">Lucro hoje</div><div class="v ${corI(t.lucro)}">${brlI(t.lucro)}</div></div>
+      <div class="ik"><div class="l">ROI hoje</div><div class="v ${corI(t.roi)}">${pctI(t.roi,true)}</div></div>
+      <div class="ik"><div class="l">ROAS hoje</div><div class="v">${t.roas?t.roas.toFixed(2).replace(".",",")+"x":"–"}</div></div>
+      <div class="ik"><div class="l">Lucro 30 dias</div><div class="v ${corI(mes&&mes.total.lucro)}">${brlI(mes&&mes.total.lucro)}</div><div class="s">ROI ${pctI(mes&&mes.total.roi,true)}</div></div>
+    </div>
+    <div class="ini-g">
+      <div class="ibox"><h3>📈 ROI diário · últimos 30 dias</h3><div class="chart"><canvas id="iniRoi"></canvas></div></div>
+      <div class="ibox"><h3>💰 Faturamento × gasto × lucro</h3><div class="chart"><canvas id="iniFat"></canvas></div></div>
+    </div>
+    <div class="ini-3">
+      <div class="ibox"><h3>📣 Gerenciador de anúncios</h3>
+        <div class="minilista"><div><span>Modo do piloto</span><b>${esc({desligado:"Desligado",sugerir:"Sugerir",automatico:"Automático"}[cfg.regras&&cfg.regras.modo]||"–")}</b></div><div><span>Decide por</span><b>${cfg.regras&&cfg.regras.fonteConversoes==="vendas"?'<span class="pos">vendas reais</span>':"pixel"}</b></div><div><span>Sugestões esperando você</span><b class="${pend?"pos":""}">${pend}</b></div><div><span>Última análise</span><b>${est.atualizadoEm?new Date(est.atualizadoEm).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"–"}</b></div></div>
+        ${camp?`<div style="margin-top:10px;font-size:13px">🏆 Campeão de hoje: <b>${esc(camp.nome)}</b> <span class="note">· ${camp.vendas} venda(s) · ROI <span class="pos">${pctI(camp.roi,true)}</span></span></div>`:""}
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><span class="lnk" data-ir2="gerenciador/visao">Ver sugestões →</span><span class="lnk" data-ir2="gerenciador/campanhas">Campanhas →</span></div></div>
+      ${blocoClonador}
+      <div class="ibox"><h3>💰 UTMFy · últimas vendas</h3><div class="minilista">${(hoje&&mes?mes.ultimas.slice(0,6):[]).map(v=>`<div><span>${new Date(v.quando).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} · ${esc(v.produto)}</span><b class="${v.status==="aprovada"?"pos":v.status==="reembolsada"||v.status==="chargeback"?"neg":""}">${brlI(v.valor)}</b></div>`).join("")||`<span class="note">Nenhuma venda ainda.</span>`}</div>
+        <div style="margin-top:12px"><span class="lnk" data-ir2="utmfy/vendas">Todas as vendas →</span></div></div>
+    </div>
+    ${faltam?`<div class="ibox"><h3>🚀 Deixe tudo conectado (${passos.length-faltam}/${passos.length})</h3><div class="passos">${passos.map(([ok,txt,r])=>`<div class="passo ${ok?"ok":""}">${ok?"✅":"⬜"} <span style="flex:1">${txt}</span>${ok?"":`<span class="lnk" data-ir2="${r}">fazer agora →</span>`}</div>`).join("")}</div></div>`:""}`;
+  ligarIni();
+  if(typeof Chart!=="undefined"&&mes){
+    const dias=mes.porDia,lab=dias.map(d=>d.dia.slice(8,10)+"/"+d.dia.slice(5,7));
+    if(chIni1)chIni1.destroy();if(chIni2)chIni2.destroy();
+    const eixo={ticks:{color:"#8fa595"},grid:{color:"rgba(255,255,255,.05)"}};
+    chIni1=new Chart($("#iniRoi"),{type:"bar",data:{labels:lab,datasets:[{label:"ROI do dia",data:dias.map(d=>d.roi===null?null:+d.roi.toFixed(1)),backgroundColor:dias.map(d=>(d.roi||0)>=0?"rgba(34,197,94,.75)":"rgba(240,82,82,.7)"),borderRadius:5}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`ROI: ${pctI(c.parsed.y,true)} · lucro ${brlI(dias[c.dataIndex].lucro)}`}}},scales:{x:eixo,y:{...eixo,ticks:{color:"#8fa595",callback:v=>v+"%"}}}}});
+    chIni2=new Chart($("#iniFat"),{data:{labels:lab,datasets:[
+      {type:"bar",label:"Faturamento",data:dias.map(d=>+d.liquido.toFixed(2)),backgroundColor:"rgba(34,197,94,.55)",borderRadius:5,order:2},
+      {type:"bar",label:"Gasto",data:dias.map(d=>+d.gasto.toFixed(2)),backgroundColor:"rgba(148,163,150,.35)",borderRadius:5,order:3},
+      {type:"line",label:"Lucro",data:dias.map(d=>+d.lucro.toFixed(2)),borderColor:"#86efac",backgroundColor:"#86efac",tension:.3,pointRadius:2,order:1}]},
+      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{labels:{color:"#8fa595",boxWidth:12}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${brlI(c.parsed.y)}`}}},scales:{x:eixo,y:{...eixo,ticks:{color:"#8fa595",callback:v=>"R$ "+Number(v).toLocaleString("pt-BR")}}}}});
+  }
+}
+function ligarIni(){
+  $("#viewInicio").onclick=e=>{const a=e.target.closest("[data-ir2]");if(a)ir(a.dataset.ir2);};
+  const b=$("#iniMinerar");if(b)b.onclick=()=>{const kw=$("#iniKw").value.trim();ir("clonador/minerar");if(kw){$("#mKw").value=kw;$("#btnMine").click();}};
+  const k=$("#iniKw");if(k)k.onkeydown=e=>{if(e.key==="Enter")$("#iniMinerar").click();};
+  const s=$("#iniSync");if(s)s.onclick=async()=>{s.disabled=true;s.textContent="Buscando…";try{const r=await fetch("/api/analytics/sincronizar",{method:"POST",headers:{"X-Minerador":"1","Content-Type":"application/json"},body:"{}"});const j=await r.json();toast(j.erros&&j.erros.length?j.erros.join(" · "):"Atualizado ✓",j.erros&&j.erros.length);}catch(e){toast("Não consegui atualizar",true);}renderInicio();};
+}
+
+atualizarBotao();
+detectarLocal().then(()=>{
+  $$v("#menu a.loc").forEach(a=>a.title=LOCAL?"":"Disponível no modo computador");
+  $("#btnCfg").style.display=LOCAL?"none":"";
+  const h=location.hash.slice(1);
+  ir(ROTAS[h]?h:LS.get("rota","inicio"));
+});
+carregar();
+})();
+</script>
+<script src="trafego.js"></script>
+<script src="analytics.js"></script>
+</body>
+</html>

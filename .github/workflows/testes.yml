@@ -1,0 +1,54 @@
+name: Testes
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  testes:
+    name: Testes (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Instalar
+        run: npm install --no-audit --no-fund
+        env:
+          SEM_NAVEGADOR: "1"
+      - name: Testes de lógica (Clonador, Gerenciador, UTMFy)
+        run: npm test
+      - name: Teste de fumaça (liga o site e confere as páginas)
+        run: npm run fumaca
+
+  robo:
+    name: Robô do Clonador (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Instalar com o navegador do robô
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Minerar numa Biblioteca de Anúncios simulada
+        run: node scripts/minerar.mjs
+        env:
+          MOCK_FB: "1"
+          PALAVRAS: "emagrecer"
+          PAIS: "BR"
+      - name: Conferir resultado
+        run: node -e "const d=require('./data/ofertas.json');const n=d.ofertas.length;console.log(n+' ofertas');if(!n||!d.ofertas.some(o=>o.funil&&o.funil.tipo))process.exit(1)"

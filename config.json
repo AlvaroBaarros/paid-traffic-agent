@@ -1,0 +1,35 @@
+{
+  "pais": "BR",
+  "palavrasChave": ["emagrecer", "renda extra", "ansiedade"],
+
+  "minAnuncios": 5,
+  "minAnunciosParaSalvar": 2,
+
+  "escalada": {
+    "minAnunciosOferta": 15,
+    "minAnunciosAnunciante": 40,
+    "crescimentoEscalando": 30
+  },
+
+  "anunciosPorBusca": 300,
+  "maxRolagens": 40,
+  "anunciantesContadosPorBusca": 15,
+  "maxPalavrasPorExecucao": 20,
+  "maxCriativosPorOferta": 8,
+
+  "funil": {
+    "status": ["escalada", "escalando", "rodando", "teste"],
+    "maxPorBusca": 20,
+    "revisarAposDias": 7
+  },
+
+  "videos": {
+    "salvar": true,
+    "status": ["escalada", "escalando"],
+    "maxPorExecucao": 20,
+    "tamanhoMaxMB": 95
+  },
+
+  "manterBuscasDias": 30,
+  "manterHistoricoDias": 60
+}

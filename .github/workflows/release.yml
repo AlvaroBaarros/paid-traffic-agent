@@ -1,0 +1,44 @@
+name: Publicar versão
+
+# Dispara quando uma etiqueta v* é enviada OU quando você publica uma Release pelo site do GitHub
+# (Releases → Draft a new release). Nos dois casos o zip para download é montado e anexado sozinho.
+on:
+  push:
+    tags: ["v*"]
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descobrir a versão
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          [ -n "$TAG" ] || TAG="${GITHUB_REF_NAME}"
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+          echo "NOME=paid-traffic-agent-${TAG}" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - name: Montar o pacote para download
+        run: git archive --format=zip --prefix="${NOME}/" -o "${NOME}.zip" HEAD
+      - name: Notas da versão (do CHANGELOG)
+        run: |
+          V="${TAG#v}"
+          awk -v v="$V" 'index($0,"## ["v"]")==1{f=1;next} /^## \[/{f=0} f' CHANGELOG.md > notas.md
+          [ -s notas.md ] || echo "Veja o CHANGELOG.md." > notas.md
+      - name: Criar ou completar a release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${NOME}.zip" --clobber
+          else
+            EXTRA=""
+            case "$TAG" in *beta*|*alpha*|*rc*) EXTRA="--prerelease";; esac
+            gh release create "$TAG" "${NOME}.zip" --title "🐉 Paid Traffic Agent ${TAG}" --notes-file notas.md $EXTRA
+          fi

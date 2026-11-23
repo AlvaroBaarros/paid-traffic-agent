@@ -1,0 +1,31 @@
+{
+  "name": "paid-traffic-agent",
+  "version": "0.1.0-beta",
+  "private": true,
+  "type": "module",
+  "description": "Paid Traffic Agent: Clonador de ofertas, Gerenciador de anúncios (Meta/Google) e UTMFy (vendas, lucro e ROI) num site só.",
+  "scripts": {
+    "start": "node servidor.mjs",
+    "minerar": "node scripts/minerar.mjs",
+    "postinstall": "node scripts/pos-instalar.mjs",
+    "test": "node test/testar.mjs && node test/testar-trafego.mjs && node test/testar-analytics.mjs",
+    "fumaca": "node test/fumaca.mjs"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.1",
+    "playwright": "^1.48.0"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Debian",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlvaroBaarros/paid-traffic-agent.git"
+  },
+  "homepage": "https://github.com/AlvaroBaarros/paid-traffic-agent",
+  "bugs": {
+    "url": "https://github.com/AlvaroBaarros/paid-traffic-agent/issues"
+  }
+}

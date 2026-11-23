@@ -1,0 +1,111 @@
+name: Minerar ofertas
+
+on:
+  schedule:
+    - cron: "0 11 * * *" # todo dia às 8h de Brasília
+  workflow_dispatch:
+    inputs:
+      palavras:
+        description: "Tema ou palavras-chave (separe por vírgula). Vazio = todas as acompanhadas"
+        required: false
+        default: ""
+      pais:
+        description: "País da biblioteca (BR, PT, US...)"
+        required: false
+        default: "BR"
+      nicho:
+        description: "Nicho (opcional — se vazio, o robô detecta sozinho)"
+        required: false
+        default: ""
+      acompanhar:
+        description: "Acompanhar essas palavras todo dia?"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: minerar
+  cancel-in-progress: false
+
+jobs:
+  minerar:
+    # A mineração diária só roda se você criar a variável MINERAR_AGENDADO=true
+    # (Settings → Secrets and variables → Actions → Variables). Manual (Run workflow) sempre funciona.
+    if: github.event_name == 'workflow_dispatch' || vars.MINERAR_AGENDADO == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependências
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Minerar a Biblioteca de Anúncios
+        env:
+          PALAVRAS: ${{ github.event.inputs.palavras }}
+          PAIS: ${{ github.event.inputs.pais }}
+          NICHO: ${{ github.event.inputs.nicho }}
+          ACOMPANHAR: ${{ github.event.inputs.acompanhar }}
+        run: node scripts/minerar.mjs
+
+      - name: Guardar vídeos das escaladas
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ls out/videos/*.mp4 >/dev/null 2>&1; then
+            gh release view videos >/dev/null 2>&1 || gh release create videos --title "Vídeos salvos" --notes "Vídeos das ofertas escaladas, guardados pelo robô para estudo."
+            gh release upload videos out/videos/*.mp4 --clobber
+          else
+            echo "Nenhum vídeo novo."
+          fi
+
+      - name: Salvar dados no repositório
+        if: always()
+        run: |
+          git config user.name "robo-minerador"
+          git config user.email "robo-minerador@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then echo "Sem mudanças."; exit 0; fi
+          git commit -m "Mineração $(date -u +%F)"
+          git pull --rebase --autostash || true
+          git push
+
+      - name: Montar o painel
+        if: always()
+        run: |
+          mkdir -p _site
+          cp -r site/* _site/
+          cp -r data _site/data
+
+      - uses: actions/upload-pages-artifact@v3
+        if: always()
+        with:
+          path: _site
+
+      - name: Publicar o painel
+        id: deploy
+        if: always()
+        uses: actions/deploy-pages@v4
+
+      - name: Capturas de tela para diagnóstico
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug
+          path: out/debug
+          if-no-files-found: ignore
+          retention-days: 7
