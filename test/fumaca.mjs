@@ -17,7 +17,7 @@ try {
   conferir("servidor ligou", /rodando em/.test(saida), saida.split("\n").find((l) => /rodando/.test(l))?.trim());
   const home = await fetch(base + "/");
   const html = await home.text();
-  conferir("página inicial", home.ok && html.includes("Paid Traffic Agent") && html.includes("🐉"));
+  conferir("página inicial", home.ok && html.includes("Paid Traffic Agent"));
   for (const arq of ["/trafego.js", "/analytics.js", "/data/ofertas.json"]) conferir(arq, (await fetch(base + arq)).ok);
   const st = await (await fetch(base + "/api/status")).json();
   conferir("api/status", st.local === true && !!st.versao?.atual, "v" + st.versao?.atual);

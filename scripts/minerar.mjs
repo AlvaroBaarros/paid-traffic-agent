@@ -144,6 +144,7 @@ async function lerCartoesDaTela() {
   });
 }
 
+let leiturasReserva = 0;
 async function minerarPalavra(palavra, pais) {
   const mapa = new Map();
   coletor = mapa;
@@ -172,7 +173,7 @@ async function minerarPalavra(palavra, pais) {
 
   if (mapa.size === 0) {
     for (const n of await lerCartoesDaTela().catch(() => [])) mapa.set(String(n.ad_archive_id), n);
-    if (mapa.size) console.log("   (dados lidos direto da tela — modo reserva)");
+    if (mapa.size) { console.log("   (dados lidos direto da tela — modo reserva)"); leiturasReserva++; }
   }
   coletor = null;
 
@@ -308,6 +309,22 @@ if (cfgV.salvar !== false) {
   }
   console.log(`\n🎬 ${salvos} vídeos novos salvos`);
 }
+
+// ---------- Saúde do robô: avisa se a Biblioteca parou de responder ou mudou ----------
+const problemas = [];
+for (const [chave, r] of Object.entries(resultados)) {
+  const antes = dados.buscas[chave]?.anunciosColetados || 0;
+  if (!r.ok && antes >= 10) problemas.push({ busca: r.palavra, pais: r.pais, antes, agora: 0, tipo: "zerou" });
+  else if (r.ok && antes >= 30 && r.coletados < antes * 0.15) problemas.push({ busca: r.palavra, pais: r.pais, antes, agora: r.coletados, tipo: "queda" });
+}
+const nBuscas = Object.keys(resultados).length;
+const semResultado = Object.values(resultados).filter((r) => !r.ok).length;
+const saude = {
+  em: new Date().toISOString(), buscas: nBuscas, comResultado: nBuscas - semResultado, semResultado, reserva: leiturasReserva, problemas,
+  status: nBuscas && semResultado === nBuscas ? "falhou" : problemas.length || leiturasReserva ? "alerta" : "ok",
+};
+await gravarJson(arq("data/saude.json"), saude);
+if (saude.status !== "ok") console.log(`\n⚠️ Saúde do robô: ${saude.status}${problemas.length ? " · " + problemas.map((p) => `${p.busca}: ${p.antes} → ${p.agora}`).join(", ") : ""}${leiturasReserva ? " · leitura em modo reserva" : ""}`);
 
 // ---------- Junta com os dados anteriores ----------
 const todasNovas = [];

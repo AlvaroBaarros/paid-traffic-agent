@@ -1,6 +1,6 @@
 {
   "name": "paid-traffic-agent",
-  "version": "0.1.0-beta",
+  "version": "0.2.0-beta",
   "private": true,
   "type": "module",
   "description": "Paid Traffic Agent: Clonador de ofertas, Gerenciador de anúncios (Meta/Google) e UTMFy (vendas, lucro e ROI) num site só.",
@@ -8,7 +8,7 @@
     "start": "node servidor.mjs",
     "minerar": "node scripts/minerar.mjs",
     "postinstall": "node scripts/pos-instalar.mjs",
-    "test": "node test/testar.mjs && node test/testar-trafego.mjs && node test/testar-analytics.mjs",
+    "test": "node test/testar.mjs && node test/testar-trafego.mjs && node test/testar-analytics.mjs && node test/testar-plataformas.mjs",
     "fumaca": "node test/fumaca.mjs"
   },
   "dependencies": {

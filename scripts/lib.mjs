@@ -187,6 +187,32 @@ export function classificar(o, cfg) {
   return "teste";
 }
 
+// Força da oferta (0 a 100): o sinal mais confiável de oferta escalada é ficar muito tempo no ar e continuar crescendo.
+// serie = histórico de anúncios ativos da oferta por dia ({ "2026-11-20": 12, ... }), antes de hoje.
+export function scoreEscala(o, serie = {}) {
+  const dias = o.diasRodando || 0;
+  const ads = o.anunciosOferta || 0;
+  const cres = o.crescimento;
+  const presenca = Object.keys(serie || {}).length;
+  const partes = {
+    tempo: Math.min(dias / 30, 1) * 25,
+    volume: Math.min(Math.log2(1 + ads) / Math.log2(41), 1) * 30,
+    crescimento: cres === null || cres === undefined ? 6 : (Math.max(0, Math.min(cres, 100)) / 100) * 20,
+    criativos: Math.min((o.criativosDiferentes || 0) / 6, 1) * 10,
+    anunciante: Math.min((o.anunciosAnunciante || 0) / 60, 1) * 10,
+    constancia: Math.min(presenca / 7, 1) * 5,
+  };
+  const score = Math.round(Object.values(partes).reduce((a, b) => a + b, 0));
+  const tendencia = cres === null || cres === undefined ? (presenca < 2 ? "nova" : "estavel") : cres >= 15 ? "subindo" : cres <= -15 ? "caindo" : "estavel";
+  const forca = score >= 70 ? "muito forte" : score >= 50 ? "forte" : score >= 30 ? "media" : "fraca";
+  const sinais = [];
+  if (dias >= 7) sinais.push({ pt: `no ar há ${dias} dias`, en: `running for ${dias} days` });
+  if (cres !== null && cres !== undefined && cres !== 0) sinais.push({ pt: `${cres > 0 ? "+" : ""}${cres}% de anúncios em 7 dias`, en: `${cres > 0 ? "+" : ""}${cres}% ads in 7 days` });
+  if ((o.criativosDiferentes || 0) >= 3) sinais.push({ pt: `${o.criativosDiferentes} criativos diferentes`, en: `${o.criativosDiferentes} different creatives` });
+  if (presenca >= 3) sinais.push({ pt: `vista em ${presenca} minerações`, en: `seen in ${presenca} runs` });
+  return { score: Math.min(100, score), tendencia, forca, sinais, partes: Object.fromEntries(Object.entries(partes).map(([k, v]) => [k, Math.round(v)])) };
+}
+
 export function agruparOfertas(anuncios, { palavra, pais, dia, contagens = {}, historico = { ofertas: {} }, cfg = {}, nichoFixo = "" }) {
   const mapa = new Map();
   for (const ad of anuncios) {
@@ -237,7 +263,9 @@ export function agruparOfertas(anuncios, { palavra, pais, dia, contagens = {}, h
     const nichoTexto = detectarNicho(oferta.titulo, ...ads.slice(0, 4).map((a) => a.texto));
     oferta.nicho = nichoFixo || (nichoTexto !== "Outros" ? nichoTexto : detectarNicho(palavra));
     oferta.status = classificar(oferta, cfg);
-    oferta.pontuacao = Math.round(anunciosOferta * 2 + (oferta.anunciosAnunciante || 0) * 0.5 + (oferta.diasRodando || 0) * 0.3 + Math.max(0, oferta.crescimento || 0) * 0.2);
+    const se = scoreEscala(oferta, historico.ofertas?.[`${pais}|${o.chave}`]);
+    Object.assign(oferta, { score: se.score, tendencia: se.tendencia, forca: se.forca, sinais: se.sinais, scorePartes: se.partes });
+    oferta.pontuacao = se.score;
     ofertas.push(oferta);
   }
   return ofertas.sort((a, b) => b.pontuacao - a.pontuacao);

@@ -12,9 +12,25 @@ function caktoValido(segredo, corpo, cab, segredoCorpo) {
   return !!segredoCorpo && igual(segredoCorpo, segredo);
 }
 import * as agente from "../trafego/agente.mjs";
-import { normalizarEvento, aplicarVenda, relatorio, hojeNoFuso, somarDias, lerVendasArquivo, lerGastosArquivo, dataNoFuso, atribuir } from "./vendas.mjs";
+import { normalizarEvento, aplicarVenda, relatorio, hojeNoFuso, somarDias, lerVendasArquivo, lerGastosArquivo, dataNoFuso, atribuir, conversor } from "./vendas.mjs";
 import { codigoWorker, PLATAFORMAS_CHECKOUT, scriptPagina, UTM_GOOGLE } from "./worker.mjs";
 import { UTM_META } from "../trafego/meta.mjs";
+import { UTM_TIKTOK } from "../trafego/tiktok.mjs";
+import { UTM_KWAI } from "../trafego/kwai.mjs";
+import { PLATAFORMAS } from "../trafego/plataformas.mjs";
+import * as avisos from "../notificacoes/telegram.mjs";
+import { COTACOES_PADRAO } from "./vendas.mjs";
+
+// ClickBank criptografa o aviso (INS v6+): AES-256-CBC com os 32 primeiros caracteres do SHA-1 da Secret Key.
+export function decifrarClickbank(corpo, chave) {
+  const j = typeof corpo === "string" ? JSON.parse(corpo) : corpo;
+  if (!j?.notification || !j?.iv) return null;
+  const k = Buffer.from(crypto.createHash("sha1").update(String(chave)).digest("hex").slice(0, 32), "utf8");
+  const d = crypto.createDecipheriv("aes-256-cbc", k, Buffer.from(j.iv, "base64"));
+  d.setAutoPadding(false);
+  const txt = Buffer.concat([d.update(j.notification, "base64"), d.final()]).toString("utf8").replace(/[\x00-\x1f]+$/g, "").trim();
+  return txt;
+}
 
 let RAIZ = process.cwd();
 let FETCH = fetch;
@@ -24,7 +40,9 @@ const arq = (n) => path.join(RAIZ, "trafego-dados", n);
 async function gravar(nome, v) { await fs.mkdir(path.join(RAIZ, "trafego-dados"), { recursive: true }); const tmp = arq(nome) + ".tmp"; await fs.writeFile(tmp, JSON.stringify(v)); await fs.rename(tmp, arq(nome)); }
 async function ler(nome, padrao) { try { return JSON.parse(await fs.readFile(arq(nome), "utf8")); } catch { return padrao; } }
 
-const PADRAO = { fuso: "America/Sao_Paulo", impostoPct: 0, taxaExtraPct: 0, custoPorVenda: 0, hottok: "", segredoCakto: "", workerUrl: "", ultimoEvento: 0 };
+const PADRAO = { fuso: "America/Sao_Paulo", impostoPct: 0, taxaExtraPct: 0, custoPorVenda: 0, custoChargeback: 0, moeda: "BRL", moedaAnuncios: "", cotacoes: { ...COTACOES_PADRAO }, hottok: "", segredoCakto: "", mercadoPagoToken: "", clickbankChave: "", workerUrl: "", ultimoEvento: 0 };
+const SEGREDOS_A = ["mercadoPagoToken", "clickbankChave"];
+const mascara = (v) => (v ? "••••" + String(v).slice(-4) : "");
 
 export async function config() {
   const c = await agente.carregarConfig();
@@ -39,7 +57,16 @@ export async function config() {
 
 export async function salvar(parcial = {}) {
   const permitido = {};
-  for (const k of ["fuso", "impostoPct", "taxaExtraPct", "custoPorVenda", "hottok", "segredoCakto", "workerUrl"]) if (parcial[k] !== undefined) permitido[k] = k === "workerUrl" ? String(parcial[k]).trim().replace(/\/+$/, "") : parcial[k];
+  for (const k of ["fuso", "impostoPct", "taxaExtraPct", "custoPorVenda", "custoChargeback", "moeda", "moedaAnuncios", "cotacoes", "hottok", "segredoCakto", "mercadoPagoToken", "clickbankChave", "workerUrl"]) if (parcial[k] !== undefined) permitido[k] = k === "workerUrl" ? String(parcial[k]).trim().replace(/\/+$/, "") : parcial[k];
+  if (permitido.moeda && !["BRL", "USD", "EUR", "GBP"].includes(permitido.moeda)) delete permitido.moeda;
+  if (permitido.moedaAnuncios !== undefined && !["", "BRL", "USD", "EUR", "GBP"].includes(permitido.moedaAnuncios)) delete permitido.moedaAnuncios;
+  // Trocar a moeda principal não muda a moeda em que as contas de anúncio cobram:
+  // se ela ainda não foi escolhida, fica presa na moeda principal anterior para o gasto continuar certo.
+  if (permitido.moeda && permitido.moedaAnuncios === undefined) {
+    const atual = await config();
+    if (!atual.moedaAnuncios && (atual.moeda || "BRL") !== permitido.moeda) permitido.moedaAnuncios = atual.moeda || "BRL";
+  }
+  if (permitido.moedaAnuncios && permitido.moedaAnuncios === (permitido.moeda || "")) permitido.moedaAnuncios = "";
   if (parcial.novosSegredos) { permitido.segredo = crypto.randomBytes(12).toString("hex"); permitido.token = crypto.randomBytes(18).toString("hex"); permitido.ultimoEvento = 0; }
   await agente.salvarConfig({ analytics: permitido });
   return painelIntegracoes();
@@ -51,10 +78,10 @@ export async function painelIntegracoes() {
   const vendas = await lerVendasArquivo(RAIZ);
   const log = await ler("eventos-log.json", []);
   return {
-    ...a,
+    ...a, ...Object.fromEntries(SEGREDOS_A.map((k) => [k, mascara(a[k])])),
     codigoWorker: codigoWorker({ segredo: a.segredo, token: a.token }),
-    webhooks: PLATAFORMAS_CHECKOUT.map(([id, nome, onde]) => ({ id, nome, onde, url: `${base}/w/${a.segredo}/${id}` })),
-    utmMeta: UTM_META, utmGoogle: UTM_GOOGLE, script: scriptPagina(),
+    webhooks: PLATAFORMAS_CHECKOUT.map(([id, nome, onde, regiao]) => ({ id, nome, onde, regiao, url: `${base}/w/${a.segredo}/${id}` })),
+    utmMeta: UTM_META, utmGoogle: UTM_GOOGLE, utmTiktok: UTM_TIKTOK, utmKwai: UTM_KWAI, script: scriptPagina(),
     totalVendas: vendas.filter((v) => !v.teste).length,
     vendasTeste: vendas.filter((v) => v.teste).length,
     ultimaVenda: vendas.filter((v) => !v.teste).map((v) => v.recebidaEm).sort().pop() || null,
@@ -65,13 +92,36 @@ export async function painelIntegracoes() {
 
 // ---------- vendas ----------
 let filaVendas = Promise.resolve();
+// Mercado Pago e ClickBank precisam de um passo antes de ler a venda.
+async function prepararEvento(ev, a) {
+  const plat = String(ev.plataforma || "").toLowerCase();
+  if (plat === "clickbank" && a.clickbankChave && /"notification"/.test(String(ev.corpo))) {
+    const txt = decifrarClickbank(ev.corpo, a.clickbankChave);
+    if (txt) return { ...ev, corpo: txt };
+  }
+  if (plat === "mercadopago" && a.mercadoPagoToken) {
+    let j = {}; try { j = JSON.parse(ev.corpo || "{}"); } catch {}
+    const q = new URLSearchParams(String(ev.query || "").replace(/^\?/, ""));
+    const id = j?.data?.id || q.get("data.id") || (q.get("topic") === "payment" ? q.get("id") : null);
+    const tipo = j?.type || j?.topic || q.get("type") || q.get("topic") || "";
+    if (id && /payment/.test(tipo + (j.action || ""))) {
+      const r = await FETCH(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${a.mercadoPagoToken}` } });
+      if (!r.ok) throw new Error(`Mercado Pago respondeu ${r.status} ao buscar o pagamento ${id}`);
+      return { ...ev, corpo: await r.text(), tipo: "application/json" };
+    }
+  }
+  return ev;
+}
+
 export function processarEventos(eventos) {
   const job = filaVendas.then(async () => {
     const a = await config();
     const vendas = await lerVendasArquivo(RAIZ);
     const log = await ler("eventos-log.json", []);
     let novas = 0, atualizadas = 0, ignorados = 0;
-    for (const ev of eventos) {
+    const paraAvisar = [];
+    for (let ev of eventos) {
+      try { ev = await prepararEvento(ev, a); } catch (e) { log.unshift({ em: ev.recebido, plataforma: ev.plataforma, resultado: "ignorado: " + e.message }); ignorados++; continue; }
       let cab = {};
       try { cab = typeof ev.cabecalhos === "string" ? JSON.parse(ev.cabecalhos || "{}") : ev.cabecalhos || {}; } catch {}
       let v = null, motivo = "";
@@ -79,16 +129,33 @@ export function processarEventos(eventos) {
       catch (e) { motivo = e.message; }
       if (v && v.checkout === "Hotmart" && a.hottok && v.hottok && v.hottok !== a.hottok) { v = null; motivo = "hottok não confere"; }
       if (v && v.checkout === "Cakto" && a.segredoCakto && !caktoValido(a.segredoCakto, String(ev.corpo || ""), cab, v.segredoCakto)) { v = null; motivo = "assinatura da Cakto não confere"; }
-      if (v) { delete v.hottok; delete v.segredoCakto; const r = aplicarVenda(vendas, v); r === "nova" ? novas++ : atualizadas++; }
+      if (v) {
+        delete v.hottok; delete v.segredoCakto;
+        const antes = vendas.find((x) => x.id === v.id)?.status;
+        const r = aplicarVenda(vendas, v); r === "nova" ? novas++ : atualizadas++;
+        const depois = vendas.find((x) => x.id === v.id);
+        if (!depois.teste && depois.status !== antes && ["aprovada", "reembolsada", "chargeback"].includes(depois.status)) paraAvisar.push(depois);
+      }
       else ignorados++;
       log.unshift({ em: ev.recebido, plataforma: ev.plataforma, resultado: v ? `${v.status} · ${v.produto} · R$ ${(v.valor ?? 0).toFixed(2)}${v.ids?.anuncio ? " · anúncio " + v.ids.anuncio : v.ids?.origem ? " · " + v.ids.origem : " · sem UTM"}` : `ignorado${motivo ? ": " + motivo : " (não parece uma venda)"}` });
     }
     await gravar("vendas.json", vendas);
     await gravar("eventos-log.json", log.slice(0, 100));
+    if (paraAvisar.length) avisarVendas(paraAvisar).catch(() => {});
     return { novas, atualizadas, ignorados };
   });
   filaVendas = job.catch(() => {});
   return job;
+}
+
+async function avisarVendas(lista) {
+  const c = await agente.carregarConfig();
+  if (!c.telegram?.ativo) return;
+  const g = await lerGastosArquivo(RAIZ);
+  const itens = lista.map((v) => { const at = atribuir(v, g.nomes || {}); return { ...v, plataforma: at.plataforma, anuncio: (at.anuncioKey && g.nomes?.[at.anuncioKey]?.anuncio) || v.utm?.content?.split("|")[0] || "" }; });
+  const aprov = itens.filter((v) => v.status === "aprovada"), dev = itens.filter((v) => v.status !== "aprovada");
+  if (aprov.length) await avisos.avisar(c, "vendas", avisos.msgVendas(c, aprov));
+  if (dev.length) await avisos.avisar(c, "reembolsos", avisos.msgVendas(c, dev));
 }
 
 export async function sincronizarVendas() {
@@ -138,14 +205,15 @@ export async function simularVenda() {
   const n = k ? g.nomes[k] : null;
   const plat = k ? k.split(":")[0] : "meta";
   const adId = k ? k.split(":")[1].split("~").pop() : "120000000000001";
+  const soId = plat === "google" || plat === "kwai";
   const valor = [47, 97, 147, 197][Math.floor(Math.random() * 4)];
   const corpo = {
     order_id: "TESTE-" + Date.now(), order_status: "paid", payment_method: ["pix", "credit_card", "boleto"][Math.floor(Math.random() * 3)], is_test: true,
     Product: { product_id: "p1", product_name: "Produto de teste" }, Customer: { email: "teste@debian.dev", full_name: "Cliente Teste" },
     Commissions: { charge_amount: valor * 100, my_commission: Math.round(valor * 0.9 * 100) },
-    TrackingParameters: plat === "google"
-      ? { utm_source: "google", utm_campaign: n?.campanhaId || "1", utm_medium: n?.conjuntoId || "1", utm_content: adId }
-      : { utm_source: "FB", utm_campaign: `${n?.campanha || "Campanha"}|${n?.campanhaId || "1"}`, utm_medium: `${n?.conjunto || "Conjunto"}|${n?.conjuntoId || "1"}`, utm_content: `${n?.anuncio || "Anúncio"}|${adId}` },
+    TrackingParameters: soId
+      ? { utm_source: plat, utm_campaign: n?.campanhaId || "1", utm_medium: n?.conjuntoId || "1", utm_content: adId }
+      : { utm_source: plat === "tiktok" ? "tiktok" : "FB", utm_campaign: `${n?.campanha || "Campanha"}|${n?.campanhaId || "1"}`, utm_medium: `${n?.conjunto || "Conjunto"}|${n?.conjuntoId || "1"}`, utm_content: `${n?.anuncio || "Anúncio"}|${adId}` },
     created_at: new Date().toISOString(), approved_date: new Date().toISOString(),
   };
   return processarEventos([{ plataforma: "kiwify", corpo: JSON.stringify(corpo), tipo: "application/json", recebido: new Date().toISOString() }]);
@@ -170,8 +238,11 @@ export async function sincronizarGastos({ dias } = {}) {
   const desde = somarDias(hoje, -(n - 1));
   const erros = [];
   const lotes = [];
-  if (cli.meta && c.meta.contaId) { try { lotes.push(["meta", await cli.meta.gastosDiarios(c.meta.contaId, desde, hoje)]); } catch (e) { erros.push("Meta: " + e.message); } }
-  if (cli.google) { try { lotes.push(["google", await cli.google.gastosDiarios(desde, hoje)]); } catch (e) { erros.push("Google: " + e.message); } }
+  for (const plat of PLATAFORMAS) {
+    if (!cli[plat] || (plat === "meta" && !c.meta.contaId)) continue;
+    try { lotes.push([plat, plat === "meta" ? await cli.meta.gastosDiarios(c.meta.contaId, desde, hoje) : await cli[plat].gastosDiarios(desde, hoje)]); }
+    catch (e) { erros.push(`${plat}: ${e.message}`); }
+  }
   for (const [plat, linhas] of lotes) {
     // limpa o período dessa plataforma antes de regravar (valores do dia mudam ao longo do dia)
     for (let d = desde; d <= hoje; d = somarDias(d, 1)) if (g.dias[d]) for (const k of Object.keys(g.dias[d])) if (k.startsWith(plat + ":")) delete g.dias[d][k];
@@ -214,13 +285,14 @@ export async function listarVendas({ periodo: per = "30d", de, ate, status, prod
     const n = at.anuncioKey ? nomes[at.anuncioKey] || {} : {};
     return {
       id: v.id, transacao: v.transacao, checkout: v.checkout, status: v.status, produto: v.produto, valor: v.valor, liquido: v.liquido,
-      metodo: v.metodo, parcelas: v.parcelas, nome: v.nome, email: v.email, quando: v.aprovadaEm || v.criadaEm, teste: v.teste,
+      moeda: v.moeda || a.moeda || "BRL", metodo: v.metodo, parcelas: v.parcelas, nome: v.nome, email: v.email, quando: v.aprovadaEm || v.criadaEm, teste: v.teste,
       plataforma: at.plataforma, campanha: n.campanha || v.utm?.campaign || "", conjunto: n.conjunto || v.utm?.medium || "", anuncio: n.anuncio || v.utm?.content || "",
       origem: at.anuncioKey ? "" : (v.ids?.origem || (Object.keys(v.utm || {}).length ? "UTM sem identificação" : "sem UTM")), utm: v.utm || {}, historico: v.historico || [],
     };
   });
-  const soma = (st) => lista.filter((v) => v.status === st).reduce((t, v) => t + (+v.liquido || 0), 0);
-  return { de: d1, ate: d2, total, pagina: pag, paginas: Math.max(1, Math.ceil(total / porPagina)), itens, resumo: { aprovadas: soma("aprovada"), pendentes: lista.filter((v) => v.status === "pendente").length, reembolsadas: soma("reembolsada") } };
+  const fx = conversor(a);
+  const soma = (st) => lista.filter((v) => v.status === st).reduce((t, v) => t + (+fx(v.liquido, v.moeda) || 0), 0);
+  return { de: d1, ate: d2, total, pagina: pag, paginas: Math.max(1, Math.ceil(total / porPagina)), itens, resumo: { aprovadas: soma("aprovada"), pendentes: lista.filter((v) => v.status === "pendente").length, reembolsadas: soma("reembolsada") + soma("chargeback") }, moeda: a.moeda || "BRL" };
 }
 
 // ---------- relatório ----------
@@ -248,6 +320,7 @@ export async function gerarRelatorio({ periodo: per = "hoje", de, ate, plataform
     checkouts: [...new Set(vendas.map((v) => v.checkout))].sort(),
     temTestes: vendas.some((v) => v.teste),
   };
-  r.status = { worker: !!a.workerUrl, ultimaSync: a.ultimaSync, ultimaSyncGastos: a.ultimaSyncGastos, erroSync: a.erroSync, erroGastos: a.erroGastos, contasConectadas: !!(est.entidades || []).length || !!(await agente.configMascarada()).status.meta };
+  r.status = { worker: !!a.workerUrl, ultimaSync: a.ultimaSync, ultimaSyncGastos: a.ultimaSyncGastos, erroSync: a.erroSync, erroGastos: a.erroGastos, contasConectadas: !!(est.entidades || []).length || agente.algumaConta(await agente.carregarConfig()) };
+  r.moeda = a.moeda || "BRL";
   return r;
 }

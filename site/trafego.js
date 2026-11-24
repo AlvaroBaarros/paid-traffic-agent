@@ -1,12 +1,20 @@
-// Aba "Tráfego" do Paid Traffic Agent: agente de tráfego pago (Meta + Google).
+// Aba "Tráfego" do Paid Traffic Agent: agente de tráfego pago (Meta, Google, TikTok e Kwai).
 (function () {
   "use strict";
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const brl = (n) => (n === null || n === undefined || isNaN(n) ? "–" : "R$ " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-  const num = (n) => (n === null || n === undefined ? "–" : Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 1 }));
-  const pct = (n) => (n === null || n === undefined ? "–" : n.toFixed(2).replace(".", ",") + "%");
+  const SIMB = { BRL: "R$", USD: "US$", EUR: "€", GBP: "£" };
+  const LOC = () => (window.I18N && window.I18N.lang === "en" ? "en-US" : "pt-BR");
+  const LOCD = () => (window.I18N && window.I18N.lang === "en" ? "en-GB" : "pt-BR");
+  const EN = () => !!(window.I18N && window.I18N.lang === "en");
+  const brl = (n) => (n === null || n === undefined || isNaN(n) ? "–" : (SIMB[window.MO_MOEDA_ADS || window.MO_MOEDA] || "R$") + " " + Number(n).toLocaleString(LOC(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  const NOME_P = { meta: "Meta", google: "Google", tiktok: "TikTok", kwai: "Kwai" };
+  const PLATS = ["meta", "google", "tiktok", "kwai"];
+  const mot = (a) => (EN() && a.motivoEn) || a.motivo || "";
+  const optPlats = () => `<option value="">Todas as plataformas</option>` + PLATS.map((p) => `<option value="${p}">Só ${NOME_P[p]}</option>`).join("");
+  const num = (n) => (n === null || n === undefined ? "–" : Number(n).toLocaleString(LOCD(), { maximumFractionDigits: 1 }));
+  const pct = (n) => (n === null || n === undefined ? "–" : n.toFixed(2).replace(".", EN() ? "." : ",") + "%");
   const toast = (m, e) => (window.MO && window.MO.toast ? window.MO.toast(m, e) : alert(m));
   const LS = { get(k, d) { try { const v = localStorage.getItem("mot_" + k); return v === null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem("mot_" + k, JSON.stringify(v)); } catch {} } };
 
@@ -30,7 +38,7 @@
   // ---------- estado ----------
   const S = { cfg: null, est: null, aba: LS.get("aba", "visao"), periodo: LS.get("periodo", "janela"), abertos: new Set(), refs: LS.get("refs", []), geradas: LS.get("geradas", null), criativosCamp: [], ativos: null, filtroPlat: "" };
 
-  const ABAS = [["visao", "📊 Visão geral"], ["campanhas", "📋 Campanhas"], ["piloto", "🤖 Piloto automático"], ["criar", "🚀 Criar campanha"], ["criativos", "✍️ Criativos & copy"], ["conexoes", "🔌 Conexões"]];
+  const ABAS = [["visao", "📊 Visão geral"], ["campanhas", "📋 Campanhas"], ["piloto", "🤖 Piloto automático"], ["ciclo", "🔄 Ciclo de criativos"], ["criar", "🚀 Criar campanha"], ["criativos", "✍️ Criativos & copy"], ["conexoes", "🔌 Conexões"], ["avisos", "🔔 Avisos"]];
 
   function estilos() {
     if ($("#tStyle")) return;
@@ -51,7 +59,13 @@
     .sug .t{font-weight:600}.sug .d{font-size:12.5px;color:var(--muted)}
     .sug.g-alta{border-color:rgba(240,82,82,.4)}.sug.g-media{border-color:rgba(245,158,11,.35)}.sug.g-info{border-color:rgba(96,165,250,.35)}
     .tag{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--panel);border:1px solid var(--line2);color:var(--muted);margin-left:6px;text-transform:uppercase}
-    .tag.meta{color:#93c5fd}.tag.google{color:#fcd34d}.tag.auto{color:#86efac;border-color:rgba(34,197,94,.4)}
+    .tag.meta{color:#93c5fd}.tag.google{color:#fcd34d}.tag.tiktok{color:#f0abfc}.tag.kwai{color:#fdba74}.tag.auto{color:#86efac;border-color:rgba(34,197,94,.4)}
+    .cic{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:8px}
+    .cic.feito{opacity:.6}
+    .cic .g{display:flex;gap:8px;align-items:flex-start;font-size:13px;padding:6px 8px;border:1px dashed var(--line2);border-radius:8px;cursor:pointer}
+    .cic .g:hover{border-color:var(--accent)}
+    .plats{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    @media(max-width:900px){.plats{grid-template-columns:1fr}}
     table.tt{width:100%;border-collapse:collapse;font-size:13px}
     table.tt th{text-align:right;color:var(--muted);font-weight:500;font-size:11.5px;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
     table.tt th:first-child,table.tt td:first-child{text-align:left}
@@ -104,17 +118,18 @@
   }
   async function recarregar() {
     try { [S.cfg, S.est] = await Promise.all([api("config"), api("estado")]); }
-    catch (e) { S.cfg = S.cfg || { status: {}, regras: {}, meta: {}, google: {}, claude: {} }; S.est = S.est || {}; toast(e.message, true); }
+    catch (e) { S.cfg = S.cfg || { status: {}, regras: {}, meta: {}, google: {}, tiktok: {}, kwai: {}, claude: {}, telegram: {} }; S.est = S.est || {}; toast(e.message, true); }
+    if (S.cfg?.analytics) window.MO_MOEDA_ADS = S.cfg.analytics.moedaAnuncios || S.cfg.analytics.moeda || "BRL";
   }
   function irPara(aba) {
     S.aba = aba; LS.set("aba", aba);
-    if (window.MO && window.MO.sincronizarMenu) window.MO.sincronizarMenu(aba === "criativos" ? "clonador/criativos" : aba === "conexoes" ? "gerenciador/contas" : "gerenciador/" + aba);
+    if (window.MO && window.MO.sincronizarMenu) window.MO.sincronizarMenu(aba === "criativos" ? "clonador/criativos" : aba === "conexoes" ? "gerenciador/contas" : aba === "avisos" ? "avisos" : "gerenciador/" + aba);
     $$("#tNav button").forEach((b) => b.classList.toggle("on", b.dataset.aba === aba));
-    ({ visao: vVisao, campanhas: vCampanhas, piloto: vPiloto, criar: vCriar, criativos: vCriativos, conexoes: vConexoes })[aba]();
+    ({ visao: vVisao, campanhas: vCampanhas, piloto: vPiloto, ciclo: vCiclo, criar: vCriar, criativos: vCriativos, conexoes: vConexoes, avisos: vAvisos }[aba] || vVisao)();
   }
   const corpo = (html) => { $("#tCorpo").innerHTML = html; };
-  const semConta = () => !S.cfg.status?.meta && !S.cfg.status?.google;
-  const avisoConectar = () => `<div class="warn">Conecte sua conta da Meta e/ou do Google em <a href="#" data-ir="conexoes">🔌 Conexões</a> para o agente começar a trabalhar.</div>`;
+  const semConta = () => !PLATS.some((p) => S.cfg.status?.[p]);
+  const avisoConectar = () => `<div class="warn">Conecte sua conta da Meta, do Google, do TikTok ou do Kwai em <a href="#" data-ir="conexoes">🔌 Contas de anúncio</a> para o agente começar a trabalhar.</div>`;
   document.addEventListener("click", (e) => { const a = e.target.closest("[data-ir]"); if (a && raiz() && raiz().contains(a)) { e.preventDefault(); irPara(a.dataset.ir); } });
 
   // ---------- VISÃO GERAL ----------
@@ -125,15 +140,17 @@
     const plats = [...new Set(ads.map((e) => e.plataforma))];
     const tot = derivar(somar(...ads.map((e) => metr(e, S.periodo))));
     const porPlat = Object.fromEntries(plats.map((p) => [p, derivar(somar(...ads.filter((e) => e.plataforma === p).map((e) => metr(e, S.periodo))))]));
-    const sub = (k, f) => plats.length > 1 ? `<div class="s">${plats.map((p) => `${p === "meta" ? "Meta" : "Google"}: ${f(porPlat[p][k])}`).join(" · ")}</div>` : "";
+    const sub = (k, f) => plats.length > 1 ? `<div class="s">${plats.map((p) => `${NOME_P[p] || p}: ${f(porPlat[p][k])}`).join(" · ")}</div>` : "";
     const modoNome = { desligado: "Desligado", sugerir: "Sugerir (você aprova)", automatico: "Automático" }[S.cfg.regras?.modo] || "–";
-    const erros = Object.entries(est.erros || {}).map(([k, v]) => `<div class="err"><b>${k === "meta" ? "Meta" : k === "google" ? "Google" : "Atenção"}:</b> ${esc(v)}</div>`).join("");
+    const erros = Object.entries(est.erros || {}).map(([k, v]) => `<div class="err"><b>${NOME_P[k] || "Atenção"}:</b> ${esc(v)}</div>`).join("");
+    const ciclos = (est.ciclo || []).filter((i) => !i.feito && !i.resolvido).length;
     corpo(`
       ${semConta() ? avisoConectar() : ""}${erros}
       <div class="tbar">
         <span class="pill">🤖 Modo: <b style="color:var(--text)">${esc(modoNome)}</b></span>
         <span class="pill">${S.cfg.regras?.fonteConversoes === "vendas" ? "💰 Decidindo pelas <b style='color:#4ade80'>vendas reais</b>" : "📡 Decidindo pelo pixel"}</span>
-        <span class="pill">${est.atualizadoEm ? "Última análise: " + new Date(est.atualizadoEm).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ainda não rodou"}</span>
+        <span class="pill">${est.atualizadoEm ? "Última análise: " + new Date(est.atualizadoEm).toLocaleString(LOCD(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Ainda não rodou"}</span>
+        ${ciclos ? `<a class="pill" href="#" data-ir="ciclo" style="color:#fbbf24">🔄 ${ciclos} criativo(s) cansado(s)</a>` : ""}
         <div class="spacer"></div>
         <select id="tPer" style="width:auto"><option value="hoje">Hoje</option><option value="janela">Últimos 3 dias + hoje</option><option value="d7">Últimos 7 dias</option></select>
         <button class="btn sm" id="tAnalise">🧠 Analisar com Claude</button>
@@ -148,7 +165,7 @@
         <div class="kpi"><div class="l">CPM</div><div class="v">${brl(tot.cpm)}</div></div>
       </div>
       <div id="tAnaliseBox"></div>
-      ${(est.diagnostico || []).length ? `<div class="tsec"><h3>Diagnóstico do agente</h3><div class="tlist">${est.diagnostico.map((d) => `<div>${esc(d)}</div>`).join("")}</div></div>` : ""}
+      ${(est.diagnostico || []).length ? `<div class="tsec"><h3>Diagnóstico do agente</h3><div class="tlist">${((EN() && est.diagnosticoEn?.length ? est.diagnosticoEn : est.diagnostico) || []).map((d) => `<div>${esc(d)}</div>`).join("")}</div></div>` : ""}
       <div class="tsec"><div class="tbar" style="margin-bottom:8px"><h3 style="margin:0">Sugestões esperando sua aprovação (${(est.pendentes || []).length})</h3><div class="spacer"></div>${(est.pendentes || []).length > 1 ? `<button class="btn sm" id="tAprovarTodas">Aprovar todas</button>` : ""}</div>
         <div class="tlist">${(est.pendentes || []).map(cardSugestao).join("") || `<div class="note">Nenhuma sugestão agora.</div>`}</div></div>
       ${(est.alertas || []).length ? `<div class="tsec"><h3>Alertas</h3><div class="tlist">${est.alertas.map(cardAlerta).join("")}</div></div>` : ""}
@@ -172,16 +189,16 @@
   const verbo = (a) => ({ pausar: "Pausar", escalar: `Escalar orçamento ${brl(a.de)} → ${brl(a.para)}`, reduzir: `Reduzir orçamento ${brl(a.de)} → ${brl(a.para)}`, ativar: "Ativar", orcamento: `Orçamento → ${brl(a.para)}` }[a.tipo] || a.tipo);
   const nivelNome = { campanha: "campanha", conjunto: "conjunto", anuncio: "anúncio" };
   function cardSugestao(a) {
-    return `<div class="sug"><div class="ic">${icone[a.tipo] || "•"}</div><div><div class="t">${esc(verbo(a))} · ${nivelNome[a.nivel] || ""} “${esc(a.nome)}”<span class="tag ${a.plataforma}">${a.plataforma}</span>${a.gerenciada ? `<span class="tag auto">gerenciada</span>` : ""}</div><div class="d">${esc(a.motivo)}</div></div>
+    return `<div class="sug"><div class="ic">${icone[a.tipo] || "•"}</div><div><div class="t">${esc(verbo(a))} · ${nivelNome[a.nivel] || ""} <span class="notr">“${esc(a.nome)}”</span><span class="tag ${a.plataforma}">${NOME_P[a.plataforma] || a.plataforma}</span>${a.gerenciada ? `<span class="tag auto">gerenciada</span>` : ""}</div><div class="d">${esc(mot(a))}</div></div>
       <div style="display:flex;gap:6px"><button class="btn sm" data-dec="ignorar" data-id="${esc(a.id)}">Ignorar</button><button class="btn sm primary" data-dec="aprovar" data-id="${esc(a.id)}">Aprovar</button></div></div>`;
   }
   function cardAlerta(a) {
-    return `<div class="sug g-${a.gravidade || "media"}"><div class="ic">⚠️</div><div><div class="t">${esc(nivelNome[a.nivel] || "")} “${esc(a.nome)}”<span class="tag ${a.plataforma}">${a.plataforma}</span></div><div class="d">${esc(a.motivo)}</div></div><div></div></div>`;
+    return `<div class="sug g-${a.gravidade || "media"}"><div class="ic">${a.reembolso ? "↩️" : a.cansado ? "🔄" : "⚠️"}</div><div><div class="t">${esc(nivelNome[a.nivel] || "")} <span class="notr">“${esc(a.nome)}”</span><span class="tag ${a.plataforma}">${NOME_P[a.plataforma] || a.plataforma}</span></div><div class="d">${esc(mot(a))}</div></div><div>${a.cansado ? `<a class="btn sm" href="#" data-ir="ciclo">Ver ganchos novos</a>` : ""}</div></div>`;
   }
   function tabelaHistorico(h) {
     if (!h.length) return `<div class="note">Nada ainda.</div>`;
     const origem = { automatico: "🤖 automático", aprovada: "✅ aprovada por você", manual: "🖐 manual", ignorada: "🙈 ignorada" };
-    return `<div class="tw"><table class="tt"><thead><tr><th>Quando</th><th>Ação</th><th style="text-align:left">Item</th><th>Origem</th><th>Resultado</th></tr></thead><tbody>${h.map((x) => `<tr><td>${new Date(x.em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td><td>${icone[x.tipo] || ""} ${esc(verbo(x))}</td><td style="text-align:left"><span class="tname" title="${esc(x.motivo || "")}">${esc(x.nome || x.alvoId)}</span><span class="tag ${x.plataforma}">${x.plataforma}</span></td><td>${origem[x.origem] || esc(x.origem)}</td><td>${x.ignorada ? "–" : x.ok ? `<span class="ok2">ok</span>` : `<span style="color:var(--down)" title="${esc(x.erro)}">erro</span>`}</td></tr>`).join("")}</tbody></table></div>`;
+    return `<div class="tw"><table class="tt"><thead><tr><th>Quando</th><th>Ação</th><th style="text-align:left">Item</th><th>Origem</th><th>Resultado</th></tr></thead><tbody>${h.map((x) => `<tr><td>${new Date(x.em).toLocaleString(LOCD(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td><td>${icone[x.tipo] || ""} ${esc(verbo(x))}</td><td style="text-align:left"><span class="tname" title="${esc(mot(x))}">${esc(x.nome || x.alvoId)}</span><span class="tag ${x.plataforma}">${NOME_P[x.plataforma] || x.plataforma}</span></td><td>${origem[x.origem] || esc(x.origem)}</td><td>${x.ignorada ? "–" : x.ok ? `<span class="ok2">ok</span>` : `<span style="color:var(--down)" title="${esc(x.erro)}">erro</span>`}</td></tr>`).join("")}</tbody></table></div>`;
   }
   async function rodarAgente() {
     const b = $("#tRodar"); if (b) { b.disabled = true; b.textContent = "Analisando…"; }
@@ -229,14 +246,14 @@
       const cpaCor = m.cpa && S.cfg.regras?.cpaAlvo ? (m.cpa <= S.cfg.regras.cpaAlvo ? "var(--up)" : m.cpa > S.cfg.regras.cpaAlvo * 1.3 ? "var(--down)" : "inherit") : "inherit";
       const ger = n === 0 ? `<label title="Deixar o piloto automático cuidar desta campanha" style="cursor:pointer"><input type="checkbox" data-ger="${esc(k)}" ${e.gerenciada || (S.cfg.regras?.campanhasGerenciadas || []).includes(k) ? "checked" : ""}> 🤖</label>` : "";
       return `<tr class="n${n}" data-k="${esc(k)}">
-        <td>${temFilhos ? `<span class="exp" data-exp="${esc(k)}">${aberto ? "▾" : "▸"}</span>` : `<span class="exp"></span>`}<span class="dot ${e.status}" title="${esc(e.statusBruto || e.status)}"></span><span class="tname" title="${esc(e.nome)}">${esc(e.nome)}</span>${n === 0 ? `<span class="tag ${e.plataforma}">${e.plataforma}</span>` : ""}</td>
+        <td>${temFilhos ? `<span class="exp" data-exp="${esc(k)}">${aberto ? "▾" : "▸"}</span>` : `<span class="exp"></span>`}<span class="dot ${e.status}" title="${esc(e.statusBruto || e.status)}"></span><span class="tname" title="${esc(e.nome)}">${esc(e.nome)}</span>${n === 0 ? `<span class="tag ${e.plataforma}">${NOME_P[e.plataforma] || e.plataforma}</span>` : ""}</td>
         <td>${e.orcamento ? brl(e.orcamento.valor) + (e.orcamento.total ? " total" : "/dia") : "–"}</td>
         <td>${brl(m.gasto)}</td><td>${num(m.conversoes)}</td><td style="color:${cpaCor}">${brl(m.cpa)}</td><td>${m.roas ? m.roas.toFixed(2) : "–"}</td><td>${pct(m.ctr)}</td><td>${brl(m.cpm)}</td>
         <td>${e.status === "ativo" ? `<button class="ib" data-act="pausar" title="Pausar">⏸</button>` : e.status === "pausado" ? `<button class="ib" data-act="ativar" title="Ativar">▶</button>` : ""} ${e.orcamento && e.orcamento.editavel ? `<button class="ib" data-act="orcamento" title="Mudar orçamento">💰</button>` : ""}</td>
         <td>${ger}</td></tr>` + (aberto && temFilhos ? filhos(e).sort((a, b) => metr(b, S.periodo).gasto - metr(a, S.periodo).gasto).map((f) => linha(f, n + 1)).join("") : "");
     };
     corpo(`${semConta() ? avisoConectar() : ""}
-      <div class="tbar"><select id="tPlat" style="width:auto"><option value="">Meta + Google</option><option value="meta">Só Meta</option><option value="google">Só Google</option></select>
+      <div class="tbar"><select id="tPlat" style="width:auto">${optPlats()}</select>
       <select id="tPer2" style="width:auto"><option value="hoje">Hoje</option><option value="janela">Últimos 3 dias + hoje</option><option value="d7">Últimos 7 dias</option></select>
       <div class="spacer"></div><span class="note">🤖 = piloto automático pode mexer nesta campanha</span><button class="btn sm" id="tAtualizar">↻ Atualizar dados</button></div>
       <div class="tsec tw"><table class="tt"><thead><tr><th>Nome</th><th>Orçamento</th><th>Gasto</th><th>Conv.</th><th>CPA</th><th>ROAS</th><th>CTR</th><th>CPM</th><th>Ações</th><th>Agente</th></tr></thead>
@@ -302,7 +319,7 @@
         </div>
         <div class="warn" id="tAvisoAuto" style="display:none">⚠️ No modo automático o agente mexe em dinheiro de verdade. Ele só atua nas campanhas marcadas abaixo, nunca passa do teto diário e escala no máximo uma vez a cada ${r.escalar?.intervaloHoras || 24}h.</div>
         <div class="regra" style="margin-bottom:12px;border-color:rgba(34,197,94,.35)"><h4>💰 Como o agente mede o resultado</h4>
-          <div class="rg"><div class="span2" style="grid-column:span 2"><label class="lb">Contar conversões pelo</label><select id="rFonte"><option value="plataforma">Pixel da Meta / conversões do Google</option><option value="vendas">Vendas reais do Debian Analytics (UTMs): recomendado</option></select></div>
+          <div class="rg"><div class="span2" style="grid-column:span 2"><label class="lb">Contar conversões pelo</label><select id="rFonte"><option value="plataforma">Pixel / conversões de cada plataforma</option><option value="vendas">Vendas reais do Debian Analytics (UTMs): recomendado</option></select></div>
           <div><label class="lb">Escalar se o ROI real for pelo menos (%)</label>${n("rRoiMin", r.roi?.minEscalar)}</div>
           <div><label class="lb">Pausar anúncio com ROI real abaixo de (%)</label>${n("rRoiMax", r.roi?.maxPausar)}</div></div>
           <div class="note" style="margin-top:6px">Com vendas reais, o agente escala o que dá lucro de verdade e pausa o que dá prejuízo, já descontando impostos e taxas do Debian Analytics. Os limites de ROI só valem nesse modo.</div></div>
@@ -330,10 +347,18 @@
           <div><label class="lb">CPA acima de X vezes o alvo</label>${n("dCpa", r.reduzir?.cpaMult)}</div>
           <div><label class="lb">Reduzir orçamento em (%)</label>${n("dPct", r.reduzir?.reducaoPct, 1)}</div>
           <div><label class="lb">No máximo 1 vez a cada (horas)</label>${n("dInt", r.reduzir?.intervaloHoras, 1)}</div></div></div>
-        <div class="regra"><h4>⚠️ Alertas</h4><div class="rg"><div><label class="lb">Avisar quando a frequência passar de</label>${n("aFreq", r.alertas?.frequenciaMax)}</div></div></div>
+        <div class="regra"><h4>🔄 Criativo cansado</h4><div class="rg"><div><label class="lb">Avisar quando a frequência passar de</label>${n("aFreq", r.alertas?.frequenciaMax)}</div>
+          <div><label class="lb">…ou quando o CTR cair mais de (%)</label>${n("cQueda", r.ciclo?.quedaCtrPct, 1)}</div>
+          <div><label class="lb">…com pelo menos (impressões)</label>${n("cImp", r.ciclo?.impressoesMin, 100)}</div></div>
+          <div class="note" style="margin-top:6px">O agente compara o CTR dos últimos 3 dias com o dos 4 dias anteriores e sugere ganchos novos em 🔄 Ciclo de criativos.</div></div>
+        <div class="regra"><h4>${ck("reAtivo", r.reembolso?.ativo)} ↩️ Reembolsos e chargebacks</h4><div class="rg">
+          <div><label class="lb">Avisar quando passar de (% das vendas)</label>${n("reTaxa", r.reembolso?.taxaMax)}</div>
+          <div><label class="lb">…a partir de quantas vendas</label>${n("reMin", r.reembolso?.minVendas, 1)}</div>
+          <div class="span2" style="grid-column:span 2;align-self:end"><label class="chk" style="padding:0 0 9px">${ck("reBloq", r.reembolso?.bloquearEscala)} não escalar campanha com reembolso acima do limite</label></div></div>
+          <div class="note" style="margin-top:6px">Conta os últimos 30 dias de cada anúncio, pelas vendas reais da UTMFy.</div></div>
       </div></div>
       <div class="tsec"><h3>Campanhas que o piloto automático pode mexer</h3>
-        ${camps.length ? `<div class="tlist">${camps.map((c) => { const k = c.plataforma + ":" + c.id; return `<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-gk="${esc(k)}" ${gerenciadas.has(k) ? "checked" : ""}><span class="dot ${c.status}"></span>${esc(c.nome)}<span class="tag ${c.plataforma}">${c.plataforma}</span></label>`; }).join("")}</div>` : `<div class="note">Rode o agente uma vez (Visão geral → Rodar agente agora) para listar suas campanhas.</div>`}
+        ${camps.length ? `<div class="tlist">${camps.map((c) => { const k = c.plataforma + ":" + c.id; return `<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-gk="${esc(k)}" ${gerenciadas.has(k) ? "checked" : ""}><span class="dot ${c.status}"></span>${esc(c.nome)}<span class="tag ${c.plataforma}">${NOME_P[c.plataforma] || c.plataforma}</span></label>`; }).join("")}</div>` : `<div class="note">Rode o agente uma vez (Visão geral → Rodar agente agora) para listar suas campanhas.</div>`}
         <div class="note" style="margin-top:8px">Campanhas criadas pelo agente já entram marcadas.</div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px"><button class="btn primary" id="rSalvar">Salvar regras</button></div>
@@ -353,6 +378,8 @@
         escalar: { ativo: c("eAtivo"), cpaMult: v("eCpa"), minConversoes: v("eConv"), aumentoPct: v("ePct"), intervaloHoras: v("eInt") },
         reduzir: { ativo: c("dAtivo"), cpaMult: v("dCpa"), reducaoPct: v("dPct"), intervaloHoras: v("dInt") },
         alertas: { frequenciaMax: v("aFreq") },
+        ciclo: { quedaCtrPct: v("cQueda") ?? 30, impressoesMin: v("cImp") ?? 2000 },
+        reembolso: { ativo: c("reAtivo"), taxaMax: v("reTaxa") ?? 15, minVendas: v("reMin") ?? 4, bloquearEscala: c("reBloq") },
         campanhasGerenciadas: $$("[data-gk]").filter((x) => x.checked).map((x) => x.dataset.gk).concat((r.campanhasGerenciadas || []).filter((k) => !$(`[data-gk="${CSS.escape(k)}"]`))),
       };
       if (!(regras.cpaAlvo > 0)) { toast("Defina o CPA alvo.", true); return; }
@@ -362,7 +389,7 @@
 
   // ---------- CRIAR CAMPANHA ----------
   function vCriar() {
-    if (!S.cfg.status?.meta) { corpo(`<div class="warn">Para criar campanhas, conecte a Meta em <a href="#" data-ir="conexoes">🔌 Conexões</a> e escolha a conta de anúncios.</div><div class="tsec help">A criação automática de campanhas é para a Meta (Facebook/Instagram). No Google, o agente analisa, pausa e ajusta orçamentos; as copies para Google ficam em ✍️ Criativos & copy.</div>`); return; }
+    if (!S.cfg.status?.meta) { corpo(`<div class="warn">Para criar campanhas, conecte a Meta em <a href="#" data-ir="conexoes">🔌 Conexões</a> e escolha a conta de anúncios.</div><div class="tsec help">A criação automática de campanhas é para a Meta (Facebook/Instagram). No Google, TikTok e Kwai, o agente analisa, pausa e ajusta orçamentos; as copies e roteiros ficam em ✍️ Criativos & copy.</div>`); return; }
     const d = LS.get("rascunhoCamp", { evento: "PURCHASE", paises: "BR", idadeMin: 18, orcamentoDiario: 50, cta: "LEARN_MORE" });
     corpo(`
       <div class="tsec"><h3>1. Oferta e público</h3><div class="fg">
@@ -494,7 +521,8 @@
           <select id="gAdd" style="max-width:520px"><option value="">＋ Adicionar uma oferta escalada do Minerador…</option>${ofs.map((o) => `<option value="${esc(o.chave)}">${esc(o.anunciante)} · ${esc(o.titulo || o.dominio || "")} (${o.anunciosOferta} anúncios)</option>`).join("")}</select>
         </div><div class="note" style="margin-top:6px">Dica: no detalhe de qualquer oferta do Minerador tem o botão “🎯 Modelar no Tráfego”.</div></div>
       <div class="tsec"><h3>Gerar</h3>
-        <div class="tbar"><label class="chk" style="padding:0"><input type="checkbox" id="gMeta" checked> Meta Ads</label><label class="chk" style="padding:0"><input type="checkbox" id="gGoogle" ${LS.get("gGoogle", false) ? "checked" : ""}> Google Ads (pesquisa)</label></div>
+        <div class="tbar"><label class="chk" style="padding:0"><input type="checkbox" id="gMeta" checked> Meta Ads</label><label class="chk" style="padding:0"><input type="checkbox" id="gGoogle" ${LS.get("gGoogle", false) ? "checked" : ""}> Google Ads (pesquisa)</label><label class="chk" style="padding:0"><input type="checkbox" id="gTt" ${LS.get("gTt", false) ? "checked" : ""}> TikTok e Kwai (vídeo vertical)</label>
+          <select id="gIdioma" style="width:auto"><option value="pt">Copy em português</option><option value="en">Copy em inglês</option><option value="es">Copy em espanhol</option></select></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn primary" id="gClaude">🧠 Copiar pedido e abrir no Claude (grátis)</button>
           ${S.cfg.status?.claude ? `<button class="btn" id="gApi">⚡ Gerar aqui (API do Claude)</button>` : `<span class="note" style="align-self:center">Para gerar direto aqui, adicione a chave da API do Claude em 🔌 Conexões.</span>`}
@@ -507,7 +535,10 @@
     $("#gRefs").onclick = (e) => { const x = e.target.closest("[data-rr]"); if (x) { S.refs.splice(Number(x.dataset.rr), 1); LS.set("refs", S.refs); renderRefs(); } };
     $("#gAdd").onchange = (e) => { const o = ofs.find((x) => x.chave === e.target.value); if (o) adicionarReferencia(o, false); e.target.value = ""; renderRefs(); };
     $("#gGoogle").onchange = (e) => LS.set("gGoogle", e.target.checked);
-    const pedido = () => ({ brief: salvarBrief(), referencias: S.refs, plataformas: [$("#gMeta").checked && "meta", $("#gGoogle").checked && "google"].filter(Boolean) });
+    $("#gTt").onchange = (e) => LS.set("gTt", e.target.checked);
+    $("#gIdioma").value = LS.get("gIdioma", EN() ? "en" : "pt");
+    $("#gIdioma").onchange = (e) => LS.set("gIdioma", e.target.value);
+    const pedido = () => ({ brief: salvarBrief(), referencias: S.refs, idioma: $("#gIdioma").value, plataformas: [$("#gMeta").checked && "meta", $("#gGoogle").checked && "google", $("#gTt").checked && "tiktok"].filter(Boolean) });
     $("#gClaude").onclick = async () => { try { const r = await api("criativos/gerar", { body: pedido() }); abrirNoClaude(r.prompt); } catch (e) { toast(e.message, true); } };
     const ga = $("#gApi");
     if (ga) ga.onclick = async () => {
@@ -578,6 +609,34 @@
           <li><b>Client ID e secret:</b> no <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a>, ative a “Google Ads API” e crie uma credencial OAuth do tipo <b>App para computador</b>.</li>
           <li><b>Refresh token:</b> abra o <a href="https://developers.google.com/oauthplayground" target="_blank" rel="noopener">OAuth Playground</a>, na engrenagem marque “Use your own OAuth credentials” e cole o client ID/secret, autorize o escopo <code>https://www.googleapis.com/auth/adwords</code> e troque o código pelo refresh token.</li></ol></details>
       </div>
+      <div class="tsec"><h3>TikTok Ads ${c.status?.tiktok ? `<span class="tag auto">conectado</span>` : ""}</h3>
+        <div class="fg">
+          <div class="span2"><label class="lb">Token de acesso (Access Token)</label><input id="ttTok" type="password" autocomplete="off" value="${esc(c.tiktok?.token || "")}"></div>
+          <div><label class="lb">ID da conta de anúncios (Advertiser ID)</label><input id="ttAdv" value="${esc(c.tiktok?.anuncianteId || "")}" placeholder="7123456789012345678"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px"><button class="btn sm primary" id="ttSalvar">Salvar e testar</button></div>
+        <details class="help" style="margin-top:12px"><summary style="cursor:pointer;color:var(--text)">Como pegar o token (10 min)</summary><ol>
+          <li>Entre em <a href="https://business-api.tiktok.com/portal" target="_blank" rel="noopener">TikTok API for Business</a> com a mesma conta do TikTok Ads Manager e crie um app (Developer → My Apps → Create).</li>
+          <li>Nas permissões, marque <b>Ads Management</b> e <b>Reporting</b>. O TikTok analisa o pedido em até 2 dias úteis.</li>
+          <li>Aprovado, abra o <b>link de autorização</b> do app, escolha sua conta de anúncios e autorize. Você recebe um <code>auth_code</code>; troque pelo <b>access token</b> na própria página do app (ele não expira).</li>
+          <li>O <b>Advertiser ID</b> aparece no topo do TikTok Ads Manager, ao lado do nome da conta.</li></ol></details>
+      </div>
+      <div class="tsec"><h3>Kwai Ads ${c.status?.kwai ? `<span class="tag auto">conectado</span>` : ""}</h3>
+        <div class="fg">
+          <div><label class="lb">ID da conta de anúncios</label><input id="kwConta" value="${esc(c.kwai?.contaId || "")}"></div>
+          <div><label class="lb">Client ID (app)</label><input id="kwCli" value="${esc(c.kwai?.clientId || "")}"></div>
+          <div><label class="lb">Client secret</label><input id="kwSec" type="password" autocomplete="off" value="${esc(c.kwai?.clientSecret || "")}"></div>
+          <div><label class="lb">Refresh token</label><input id="kwRef" type="password" autocomplete="off" value="${esc(c.kwai?.refreshToken || "")}"></div>
+          <div><label class="lb">Fuso da conta</label><select id="kwFuso">${["UTC-3", "UTC-4", "UTC-5", "UTC-6", "UTC-8", "UTC+0", "UTC+1", "UTC+2", "UTC+3", "UTC+5", "UTC+7", "UTC+8"].map((f) => `<option ${f === (c.kwai?.fuso || "UTC-3") ? "selected" : ""}>${f}</option>`).join("")}</select></div>
+          <div><label class="lb">Cotação (se a conta for em outra moeda)</label><input id="kwFx" type="number" step="0.01" min="0" value="${esc(c.kwai?.cotacao || 1)}"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px"><button class="btn sm primary" id="kwSalvar">Salvar e testar</button></div>
+        <details class="help" style="margin-top:12px"><summary style="cursor:pointer;color:var(--text)">Como liberar a API do Kwai</summary><ol>
+          <li>Agências e anunciantes diretos liberam a API no <b>Business Center</b> do <a href="https://business.kwai.com" target="_blank" rel="noopener">Kwai for Business</a>. Anunciantes de canal pedem por e-mail ao seu gerente de conta do Kwai.</li>
+          <li>Peça os escopos <code>ad_mapi_report</code>, <code>ad_mapi_campaign_read</code>, <code>ad_mapi_unit_read</code>, <code>ad_mapi_creative_read</code> e, para o piloto automático mexer, os de escrita (<code>_write</code>).</li>
+          <li>O Kwai entrega o <b>client ID</b>, o <b>client secret</b> e o <b>refresh token</b> (vale 1 ano). O app renova o acesso sozinho.</li>
+          <li><b>Importante:</b> o Kwai só deixa a API pausar e mudar o orçamento de anúncios criados pela API. Nos criados no painel do Kwai, o agente analisa e avisa, e você aplica a mudança lá.</li></ol></details>
+      </div>
       <div class="tsec"><h3>Claude API (opcional) ${c.status?.claude ? `<span class="tag auto">conectada</span>` : ""}</h3>
         <p class="note" style="margin-top:0">Sem a chave, os botões “Analisar com Claude” e “Gerar copies” abrem o pedido pronto aqui no Claude, grátis no seu plano. Com a chave, a resposta aparece direto no painel. A API é paga por uso: cada geração custa alguns centavos de dólar.</p>
         <div class="fg"><div class="span2"><label class="lb">Chave da API</label><input id="kKey" type="password" autocomplete="off" value="${esc(c.claude?.apiKey || "")}" placeholder="sk-ant-…"></div>
@@ -607,9 +666,97 @@
         vConexoes();
       } catch (e) { toast(e.message, true); }
     };
+    $("#ttSalvar").onclick = async () => {
+      try {
+        S.cfg = await api("config", { body: { tiktok: { token: $("#ttTok").value, anuncianteId: $("#ttAdv").value } } });
+        const t = await api("testar", { body: { plataforma: "tiktok" } });
+        toast(`TikTok conectado ✓ ${t.conta.nome || ""}`); vConexoes();
+      } catch (e) { toast(e.message, true); }
+    };
+    $("#kwSalvar").onclick = async () => {
+      try {
+        S.cfg = await api("config", { body: { kwai: { contaId: $("#kwConta").value, clientId: $("#kwCli").value, clientSecret: $("#kwSec").value, refreshToken: $("#kwRef").value, fuso: $("#kwFuso").value, cotacao: Number($("#kwFx").value) || 1 } } });
+        const t = await api("testar", { body: { plataforma: "kwai" } });
+        toast(`Kwai conectado ✓ ${t.conta.nome || ""}`); vConexoes();
+      } catch (e) { toast(e.message, true); }
+    };
     $("#kSalvar").onclick = async () => {
       try { S.cfg = await api("config", { body: { claude: { apiKey: $("#kKey").value, modelo: $("#kMod").value } } }); await api("testar", { body: { plataforma: "claude" } }); toast("Claude API conectada ✓"); vConexoes(); }
       catch (e) { toast(e.message, true); }
+    };
+  }
+
+
+  // ---------- CICLO DE CRIATIVOS ----------
+  function vCiclo() {
+    const itens = (S.est?.ciclo || []).slice().sort((a, b) => (a.feito ? 1 : 0) - (b.feito ? 1 : 0));
+    corpo(`
+      <div class="tsec"><h3>🔄 Ciclo de criativos</h3>
+        <p class="note" style="margin-top:0">Quando um anúncio cansa (o público já viu demais ou o CTR começa a cair), o agente busca no Clonador ofertas escaladas do mesmo assunto e separa os ganchos que estão rodando nelas. Use para modelar criativos novos: <b>minerar → criar → testar → medir → escalar</b>.</p>
+        <div class="tbar" style="margin:0"><button class="btn sm" id="cRodar">↻ Analisar agora</button><span class="note">Clique num gancho para copiar.</span></div></div>
+      ${itens.length ? `<div class="tlist">${itens.map((i, n) => `<div class="cic ${i.feito ? "feito" : ""}" data-n="${n}">
+        <div class="tbar" style="margin:0"><b class="notr">${esc(i.nome)}</b><span class="tag ${i.plataforma}">${NOME_P[i.plataforma] || i.plataforma}</span>${i.feito ? `<span class="tag auto">feito</span>` : i.novo ? `<span class="tag" style="color:#fbbf24">novo</span>` : ""}<div class="spacer"></div><span class="note notr">${esc(i.campanha || "")}</span></div>
+        <div class="d" style="font-size:13px;color:var(--muted)">${i.tipo === "ctr" ? "📉" : "👀"} ${esc(EN() ? i.motivoEn : i.motivo)}</div>
+        ${i.ganchos?.length ? `<div><div class="lb" style="margin-bottom:6px">Ganchos de ofertas escaladas para modelar</div><div style="display:grid;gap:6px">${i.ganchos.map((g) => `<div class="g" data-copiar="${esc(g.texto)}">💬 <span style="flex:1">${esc(g.texto)}</span><span class="note"><span class="notr">${esc(g.de)}</span> · ${g.anuncios} anúncio(s)</span></div>`).join("")}</div></div>` : `<div class="note">Minere ofertas do mesmo assunto no Clonador para receber ganchos aqui.</div>`}
+        ${i.referencias?.length ? `<div class="note">Ofertas de referência: <span class="notr">${i.referencias.map((r) => `${esc(r.anunciante)}${r.score != null ? ` (🔥 ${r.score})` : ""}`).join(" · ")}</span></div>` : ""}
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" data-gerar="${n}">🧠 Gerar criativos novos com o Claude</button>${i.feito ? `<button class="btn sm" data-feito="${n}" data-v="0">Desfazer</button>` : `<button class="btn sm" data-feito="${n}" data-v="1">✓ Já subi criativo novo</button>`}</div>
+      </div>`).join("")}</div>` : `<div class="tsec"><div class="note">Nenhum criativo cansado agora. 💚 O agente confere a cada análise.</div></div>`}`);
+    $("#cRodar").onclick = async () => { $("#cRodar").disabled = true; await rodarAgente(); vCiclo(); };
+    $("#tCorpo").onclick = async (e) => {
+      const g = e.target.closest("[data-copiar]");
+      if (g) { try { await navigator.clipboard.writeText(g.dataset.copiar); toast("Gancho copiado ✓"); } catch { toast("Não consegui copiar", true); } return; }
+      const ge = e.target.closest("[data-gerar]");
+      if (ge) {
+        const i = itens[Number(ge.dataset.gerar)];
+        for (const r of i.referencias || []) adicionarReferencia(r, false);
+        const b = LS.get("brief", {});
+        b.extra = (EN() ? "Replace the tired creative: " : "Substituir o criativo cansado: ") + i.nome + ". " + (EN() ? i.motivoEn : i.motivo) + ". " + (EN() ? "Model these hooks: " : "Modelar estes ganchos: ") + (i.ganchos || []).map((x) => `“${x.texto}”`).join(" ");
+        LS.set("brief", b);
+        window.MO && window.MO.ir ? window.MO.ir("clonador/criativos") : irPara("criativos");
+        setTimeout(() => toast("Referências adicionadas. Revise o briefing e gere ✓"), 300);
+        return;
+      }
+      const f = e.target.closest("[data-feito]");
+      if (f) {
+        try { const r = await api("ciclo-criativos/marcar", { body: { id: itens[Number(f.dataset.feito)].id, feito: f.dataset.v === "1" } }); S.est.ciclo = r.ciclo; vCiclo(); } catch (er) { toast(er.message, true); }
+      }
+    };
+  }
+
+  // ---------- AVISOS NO TELEGRAM ----------
+  function vAvisos() {
+    const t = S.cfg.telegram || {};
+    const tipos = { vendas: "💰 Cada venda aprovada", reembolsos: "↩️ Reembolsos e chargebacks", piloto: "🤖 O que o piloto automático fez", sugestoes: "💡 Sugestões esperando você", criativos: "🔄 Criativo cansado (com ganchos novos)", resumo: "📊 Resumo do dia", clonador: "🛑 Problemas no robô do Clonador" };
+    corpo(`
+      <div class="tsec"><h3>🔔 Avisos no celular pelo Telegram ${S.cfg.status?.telegram ? `<span class="tag auto">conectado</span>` : ""}</h3>
+        <p class="note" style="margin-top:0">Grátis. Você acompanha vendas e o piloto automático sem abrir o app. Os avisos saem do seu computador enquanto o app estiver aberto.</p>
+        <ol class="help" style="padding-left:18px">
+          <li>No Telegram, abra o <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a>, mande <code>/newbot</code>, escolha um nome e copie o <b>token</b> que ele mandar.</li>
+          <li>Cole o token abaixo, abra o seu bot no Telegram e mande qualquer mensagem para ele (por exemplo, “oi”).</li>
+          <li>Clique em <b>Encontrar meu chat</b> e depois em <b>Salvar e mandar teste</b>.</li>
+        </ol>
+        <div class="fg">
+          <div class="span2"><label class="lb">Token do bot</label><input id="tgTok" type="password" autocomplete="off" value="${esc(t.token || "")}" placeholder="123456789:AA…"></div>
+          <div><label class="lb">ID do chat</label><input id="tgChat" value="${esc(t.chatId || "")}" placeholder="clique em Encontrar meu chat"></div>
+          <div><label class="lb">Idioma dos avisos</label><select id="tgIdioma"><option value="pt">Português</option><option value="en">English</option></select></div>
+          <div><label class="lb">Hora do resumo do dia</label><input id="tgHora" type="number" min="0" max="23" value="${esc(t.horaResumo ?? 22)}"></div>
+          <div style="align-self:end"><label class="chk"><input type="checkbox" id="tgAtivo" ${t.ativo !== false ? "checked" : ""}> avisos ligados</label></div>
+        </div>
+        <div class="regra" style="margin-top:12px"><h4>O que avisar</h4><div class="fg">${Object.entries(tipos).map(([k, n]) => `<label class="chk" style="padding:0"><input type="checkbox" data-tipo="${k}" ${t.tipos?.[k] === false ? "" : "checked"}> ${n}</label>`).join("")}</div></div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn sm" id="tgAchar">🔎 Encontrar meu chat</button><button class="btn sm primary" id="tgSalvar">Salvar e mandar teste</button></div>
+      </div>`);
+    $("#tgIdioma").value = t.idioma || (EN() ? "en" : "pt");
+    $("#tgAchar").onclick = async () => {
+      try { const r = await api("telegram/descobrir", { body: { token: $("#tgTok").value } }); if (!r.chatId) throw new Error(`Mande uma mensagem para @${r.bot} no Telegram e tente de novo.`); $("#tgChat").value = r.chatId; toast(`Chat encontrado ✓ ${r.nome || ""} (@${r.bot})`); }
+      catch (e) { toast(e.message, true); }
+    };
+    $("#tgSalvar").onclick = async () => {
+      const tiposSel = Object.fromEntries($$("[data-tipo]").map((x) => [x.dataset.tipo, x.checked]));
+      try {
+        S.cfg = await api("config", { body: { telegram: { token: $("#tgTok").value, chatId: $("#tgChat").value.trim(), idioma: $("#tgIdioma").value, horaResumo: Number($("#tgHora").value) || 22, ativo: $("#tgAtivo").checked, tipos: tiposSel } } });
+        await api("telegram/testar", { body: {} });
+        toast("Teste enviado ✓ Confira o Telegram"); vAvisos();
+      } catch (e) { toast(e.message, true); }
     };
   }
 

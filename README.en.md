@@ -15,11 +15,12 @@
 > [!NOTE]
 > **Free beta.** Download it, use it and tell us what you think in the [Issues](https://github.com/AlvaroBaarros/paid-traffic-agent/issues). While we test with real ad accounts, keep the autopilot in **Suggest** mode for the first few days.
 >
-> The app interface is currently in **Brazilian Portuguese**. An English interface is on the roadmap.
+> [!TIP]
+> **New in v0.2.0-beta:** TikTok Ads and Kwai Ads, an **English interface** (one click on the 🇺🇸 flag), **Telegram** phone alerts, automatic **creative refresh**, **refunds and chargebacks per ad**, an **offer strength score** in Ad Spy, checkouts and payment gateways from **Brazil, the US and Europe**, a **Dollar · Euro · Real** currency switch at the top, and a simpler sidebar. See the [CHANGELOG](CHANGELOG.md).
 
 ## 🎯 What it is for
 
-Media buyers usually juggle three separate tools: one to spy on competitors' offers, the Meta Ads Manager, and a UTM tracker to find out what actually sells. **Paid Traffic Agent** brings the three together in one app that runs on your own computer. Because they share data, the autopilot decides what to pause and what to scale based on the **real sales** that hit your checkout, not just on what the pixel reports.
+Media buyers usually juggle three separate tools: one to spy on competitors' offers, the Meta Ads Manager, and a UTM tracker to find out what actually sells. **Paid Traffic Agent** brings the three together in one app that runs on your own computer, in English or Portuguese, and works in the US, Europe and Brazil. Because they share data, the autopilot decides what to pause and what to scale based on the **real sales** that hit your checkout, not just on what the pixel reports.
 
 <table>
 <tr>
@@ -31,26 +32,30 @@ Type a topic and the bot scans the Meta Ad Library.
 - Active ads per offer and per advertiser
 - Funnel type (VSL, quiz…), checkout and a **structured** badge
 - Downloadable videos and ad copy to study
-- Filters by niche, country, keyword and minimum ads
+- **Offer strength score** (0–100) and ▲▼ trend
+- Warns you when Meta changes the site and the bot reads less
+- Filters by niche, 25+ countries, keyword and minimum ads
 
 </td>
 <td width="33%" valign="top">
 
 ### 📣 Ads Manager <sub>(Gerenciador)</sub>
-Connects to **Meta** and **Google Ads**.
+Connects to **Meta**, **Google Ads**, **TikTok Ads** and **Kwai Ads**.
 - Overview, campaigns and ad sets with metrics
 - **Autopilot** pauses what spends without selling and scales what's profitable
 - Off, Suggest and Automatic modes with a budget ceiling
 - Creates Meta campaigns (always paused)
-- Writes hooks, ad copy and video scripts modeled on winning offers
+- **Creative refresh:** spots tired creatives and brings fresh hooks from Ad Spy
+- Writes hooks, ad copy and video scripts in English, Portuguese or Spanish
 
 </td>
 <td width="33%" valign="top">
 
 ### 💰 ROI Tracker <sub>(UTMFy)</sub>
 Real sales tied to every ad.
-- **Hotmart, Kiwify and Cakto** with dedicated parsers (plus others)
-- Revenue, spend, **profit, ROI, ROAS**, real CPA
+- **35+ checkouts and gateways** from the US, Europe and Brazil: Stripe, PayPal, Shopify, WooCommerce, ClickBank, Paddle, Digistore24, Hotmart…
+- Revenue, spend, **profit, ROI, ROAS**, real CPA, in US$, €, £ or R$
+- **Refunds and chargebacks per ad**
 - Campaigns, sales, winning and losing creatives
 - Free 24/7 receiver on Cloudflare
 - Feeds the autopilot with real ROI
@@ -59,15 +64,17 @@ Real sales tied to every ad.
 </tr>
 </table>
 
-The **Home** page puts it all together: today's numbers, a **daily ROI chart**, revenue × spend × profit for the last 30 days and a setup checklist.
+The **Home** page puts it all together: today's numbers, a **daily ROI chart**, revenue × spend × profit for the last 30 days and a setup checklist. **📱 Telegram alerts** send every sale, refund, autopilot action and a daily summary to your phone.
 
 ## 📸 Screenshots
 
 | Home | Ad Spy |
 |:---:|:---:|
-| ![Home](docs/telas/inicio.png) | ![Ad Spy](docs/telas/clonador.png) |
+| ![Home](docs/telas/en-inicio.png) | ![Ad Spy](docs/telas/en-clonador.png) |
 | **Ads Manager** | **ROI Tracker** |
-| ![Ads Manager](docs/telas/gerenciador.png) | ![ROI Tracker](docs/telas/utmfy.png) |
+| ![Ads Manager](docs/telas/en-gerenciador.png) | ![ROI Tracker](docs/telas/en-utmfy.png) |
+| **Creative refresh** | **Phone alerts** |
+| ![Creative refresh](docs/telas/en-ciclo.png) | ![Telegram alerts](docs/telas/en-avisos.png) |
 
 ## ⚙️ How it works
 
@@ -79,12 +86,13 @@ flowchart LR
         U["💰 UTMFy<br/>sales · profit · ROI"]
     end
     BA[("Meta<br/>Ad Library")] -->|Playwright bot| C
-    G <-->|"Marketing API / Google Ads API"| ADS[("Meta Ads<br/>Google Ads")]
-    CK["Hotmart · Kiwify · Cakto…"] -->|webhooks| W["☁️ 24/7 receiver<br/>Cloudflare Worker + D1"]
+    G <-->|official APIs| ADS[("Meta · Google<br/>TikTok · Kwai")]
+    CK["Hotmart · Kiwify · Stripe<br/>PayPal · Shopify · ClickBank…"] -->|webhooks| W["☁️ 24/7 receiver<br/>Cloudflare Worker + D1"]
     W -->|every 2 min| U
     ADS -->|spend per ad| U
     U -->|real ROI per ad| G
     C -->|winning offers to model| G
+    G -->|sales · autopilot · tired creatives| TG["📱 Telegram"]
 ```
 
 The autopilot is **not an AI making blind decisions**. It follows rules with thresholds you set, always looking at the last 3 days + today:
@@ -95,7 +103,8 @@ The autopilot is **not an AI making blind decisions**. It follows rules with thr
 | Ad sells, but real ROI is below −30% | ⏸ Pause |
 | Campaign with 3+ sales and real ROI above +30% | 📈 Raise budget by 20% (at most once per 24h, up to your ceiling) |
 | Campaign selling at a negative ROI | 📉 Cut budget by 20% |
-| Audience has seen the same ad more than 3× | ⚠️ Warns you it's time for a new creative |
+| Audience has seen the same ad more than 3×, or CTR dropped 30% | 🔄 Warns you and suggests fresh hooks from winning offers |
+| Ad with more than 15% refunds + chargebacks | ↩️ Warns you and won't scale it |
 
 It never pauses the last active ad in an ad set, never deletes anything, and only acts on its own in the campaigns you allow. Full details in the [Manual](MANUAL.md) (Portuguese).
 
@@ -107,22 +116,24 @@ Paid Traffic Agent was designed by **Debian** and built with **Claude (Anthropic
 |---|---|
 | **Languages** | JavaScript (Node.js 18+, ES Modules) · HTML5 · CSS3 · Bash · Batch |
 | **Server** | Plain Node.js (`http`), no frameworks, bound to `localhost` only |
-| **UI** | Build-free HTML/CSS/JS, dark green theme, responsive (desktop and mobile) |
+| **UI** | Build-free HTML/CSS/JS, dark green theme, responsive, in English and Portuguese |
 | **Ad Spy bot** | [Playwright](https://playwright.dev) + Chromium |
 | **Charts** | [Chart.js](https://www.chartjs.org) |
-| **Integrations** | Meta Marketing API v25 · Google Ads API v26 · Hotmart/Kiwify/Cakto webhooks · Claude API (optional) |
+| **Integrations** | Meta Marketing API v25 · Google Ads API v26 · TikTok API for Business v1.3 · Kwai for Business API · Telegram Bot API · 35+ checkouts and gateways (Stripe, PayPal, Shopify, ClickBank…) · Claude API (optional) |
 | **Cloud (free, optional)** | Cloudflare Workers + D1 (sales receiver) · GitHub Actions/Pages (mining and tests) |
-| **Quality** | 90+ automated checks and API simulators, run on Windows, macOS and Linux on every change |
+| **Quality** | 150+ automated checks and API simulators, run on Windows, macOS and Linux on every change |
 
-**Code by the numbers:** about 5,300 lines: 62% server-side JavaScript, 21% browser JavaScript and 14% HTML/CSS.
+**Code by the numbers:** about 7,600 lines: 49% server-side JavaScript, 21% browser JavaScript (including the English dictionary), 10% HTML/CSS and 10% tests.
 
 ```text
 servidor.mjs          local server (plain Node.js, no frameworks) + API routes
 site/                 UI: index.html (sidebar, Home), trafego.js, analytics.js
 scripts/              Ad Spy bot (Playwright) and Ad Library parsing
-trafego/              Ads Manager: Meta/Google clients, rules engine, agent, copywriting
-analytics/            ROI Tracker: webhook parsing, UTM attribution, reports, Worker
-test/                 automated tests + API simulators (Meta, Google, Claude, Ad Library)
+site/i18n*.js         Portuguese ⇄ English language switch
+trafego/              Ads Manager: Meta, Google, TikTok, Kwai, rules engine, agent, creative refresh
+analytics/            ROI Tracker: webhook parsing (35+ checkouts/gateways), UTMs, currencies, reports, Worker
+notificacoes/         phone alerts via Telegram
+test/                 testes automáticos + simulações das APIs (Meta, Google, Claude, Biblioteca)
 .github/workflows/    tests on Windows/macOS/Linux, releases and cloud mining
 ```
 
@@ -142,10 +153,12 @@ The first run installs everything automatically (a few minutes) and opens the ap
 
 ## 🚀 Getting started
 
-1. **Gerenciador de anúncios → Contas de anúncio** (Ads Manager → Ad accounts): connect Meta (and Google, if you use it).
-2. **UTMFy → Integrações** (Integrations): turn on the sales receiver, paste the webhooks into your checkout and the UTMs into your ads.
-3. **Gerenciador de anúncios → Piloto automático** (Autopilot): set your target CPA, choose **real sales** and tag the campaigns with 🤖.
-4. **Clonador** (Ad Spy): type a topic and click **Minerar agora** (Mine now).
+0. Click the 🇺🇸 **English** flag at the top right. The whole app switches to English.
+1. **Ads Manager → Ad accounts:** connect Meta, Google, TikTok or Kwai.
+2. **ROI Tracker → Integrations:** turn on the sales receiver, paste the webhooks into your checkout or gateway (Stripe, PayPal, Shopify…) and the UTMs into your ads. Pick your currency with the **R$ · € · US$** switch at the top.
+3. **Ads Manager → Autopilot:** set your target CPA, choose **real sales** and tag the campaigns with 🤖.
+4. **Phone alerts:** create a Telegram bot (2 minutes) and get everything on your phone.
+5. **Ad Spy:** type a topic and click **Mine now**.
 
 ## 💸 Costs
 
@@ -153,7 +166,7 @@ The first run installs everything automatically (a few minutes) and opens the ap
 |---|---|
 | Paid Traffic Agent (beta) | **Free** |
 | Analysis, autopilot and mining | Free (plain math: no AI, no tokens) |
-| Meta and Google APIs · Cloudflare · GitHub | Free on their free plans |
+| Meta, Google, TikTok and Kwai APIs · Telegram · Cloudflare · GitHub | Free |
 | Copywriting / analysis with Claude | Free by opening it in your own Claude, or a few cents with an API key (optional) |
 
 The only money you spend is your ad budget.
@@ -166,15 +179,17 @@ The only money you spend is your ad budget.
 
 ## 🗺️ Roadmap
 
+- [x] English interface
+- [x] TikTok Ads and Kwai Ads
+- [x] Checkouts and gateways from the US, Europe and Brazil
+- [x] Phone alerts for sales and autopilot actions (Telegram)
 - [ ] 24/7 online version (Cloudflare) with login
-- [ ] English interface
-- [ ] TikTok Ads
-- [ ] More checkouts with dedicated parsers
-- [ ] Mobile notifications for sales and autopilot actions
+- [ ] Create TikTok and Kwai campaigns right from the app
+- [ ] More languages (Spanish)
 
 ## ⚖️ Disclaimer
 
-Independent project, **not affiliated** with Meta, Google, Hotmart, Kiwify, Cakto or any other platform mentioned. Ad Spy reads the public Meta Ad Library, and Meta's terms do not allow automated collection: use it sparingly and at your own risk. Use videos and copy to **study and model** offers, not to republish them. No results are guaranteed.
+Independent project, **not affiliated** with Meta, Google, TikTok, Kwai, Telegram, Stripe, PayPal, Hotmart or any other platform mentioned. Ad Spy reads the public Meta Ad Library, and Meta's terms do not allow automated collection: use it sparingly and at your own risk. Use videos and copy to **study and model** offers, not to republish them. No results are guaranteed.
 
 ## 📄 License
 

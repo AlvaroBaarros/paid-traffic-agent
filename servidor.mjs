@@ -13,10 +13,12 @@ import { fileURLToPath } from "node:url";
 import * as agente from "./trafego/agente.mjs";
 import { promptCriativos, promptAnalise, gerarComClaude, extrairJson } from "./trafego/criativos.mjs";
 import * as analytics from "./analytics/central.mjs";
+import * as avisos from "./notificacoes/telegram.mjs";
 
 const RAIZ = path.dirname(fileURLToPath(import.meta.url));
 const PACOTE = JSON.parse(fs.readFileSync(path.join(RAIZ, "package.json"), "utf8"));
 const VERSAO = PACOTE.version;
+const MARCA = "Paid Traffic Agent";
 const versao = { atual: VERSAO, nova: null, link: null };
 
 // Avisa quando sair uma versão nova no GitHub (Releases).
@@ -48,7 +50,7 @@ checarAtualizacao();
 setInterval(checarAtualizacao, 12 * 36e5);
 agente.configurar({ raiz: RAIZ });
 analytics.configurar({ raiz: RAIZ });
-if (process.env.MOCK_ADS) { const f = (await import("./test/mock-ads.mjs")).instalarMockAds(); agente.configurar({ fetchFn: f }); analytics.configurar({ fetchFn: f }); } // só para testes
+if (process.env.MOCK_ADS) { const f = (await import("./test/mock-ads.mjs")).instalarMockAds(); agente.configurar({ fetchFn: f }); analytics.configurar({ fetchFn: f }); avisos.configurar({ fetchFn: f }); } // só para testes
 const PORTA = Number(process.env.PORTA || 3000);
 const HORA_DIARIA = process.env.HORA_DIARIA === "off" ? null : Number(process.env.HORA_DIARIA || 8);
 
@@ -69,7 +71,13 @@ function minerar({ palavras = "", pais = "", nicho = "", acompanhar = true } = {
   };
   filho.stdout.on("data", anotar);
   filho.stderr.on("data", anotar);
-  filho.on("close", (codigo) => { Object.assign(estado, { rodando: false, fim: new Date().toISOString(), ok: codigo === 0 }); });
+  filho.on("close", async (codigo) => {
+    Object.assign(estado, { rodando: false, fim: new Date().toISOString(), ok: codigo === 0 });
+    try { // avisa no Telegram se o robô não conseguiu ler a Biblioteca
+      const saude = JSON.parse(fs.readFileSync(path.join(RAIZ, "data", "saude.json"), "utf8"));
+      if (saude.status !== "ok" && Date.now() - Date.parse(saude.em) < 36e5) { const c = await agente.carregarConfig(); await avisos.avisar(c, "clonador", avisos.msgClonador(c, saude)); }
+    } catch {}
+  });
   return true;
 }
 
@@ -143,6 +151,14 @@ async function rotaTrafego(req, res, p, url) {
       if (!cli.google) throw new Error("Preencha todos os campos do Google e salve primeiro.");
       return json(res, 200, { ok: true, conta: await cli.google.testar() });
     }
+    if (b.plataforma === "tiktok") {
+      if (!cli.tiktok) throw new Error("Cole o token e o ID da conta do TikTok e salve primeiro.");
+      return json(res, 200, { ok: true, conta: await cli.tiktok.testar() });
+    }
+    if (b.plataforma === "kwai") {
+      if (!cli.kwai) throw new Error("Preencha todos os campos do Kwai e salve primeiro.");
+      return json(res, 200, { ok: true, conta: await cli.kwai.testar() });
+    }
     if (b.plataforma === "claude") {
       const c = await agente.carregarConfig();
       const t = await gerarComClaude({ apiKey: c.claude.apiKey, modelo: c.claude.modelo || undefined, prompt: "Responda só: ok", maxTokens: 10 });
@@ -150,6 +166,19 @@ async function rotaTrafego(req, res, p, url) {
     }
     throw new Error("Plataforma desconhecida");
   }
+  if (r === "telegram/descobrir" && M === "POST") {
+    const b = await lerCorpo(req);
+    const c = await agente.carregarConfig();
+    const token = b.token && !String(b.token).startsWith("••••") ? String(b.token).trim() : c.telegram.token;
+    return json(res, 200, await avisos.descobrirChat(token));
+  }
+  if (r === "telegram/testar" && M === "POST") {
+    const c = await agente.carregarConfig();
+    const en = c.telegram.idioma === "en";
+    await avisos.enviarTexto(c.telegram, en ? `✅ <b>${MARCA}</b> is connected. You will get your alerts here. 🐉` : `✅ <b>${MARCA}</b> conectado. Seus avisos vão chegar aqui. 🐉`);
+    return json(res, 200, { ok: true });
+  }
+  if (r === "ciclo-criativos/marcar" && M === "POST") { const b = await lerCorpo(req); return json(res, 200, { ciclo: await agente.marcarCiclo(b.id, b.feito !== false) }); }
   if (r === "meta/ativos" && M === "GET") {
     const c = await agente.carregarConfig();
     const cli = agente.clientes(c);
@@ -324,8 +353,7 @@ let ultimoCiclo = 0;
 setInterval(async () => {
   try {
     const c = await agente.carregarConfig();
-    const conectado = (c.meta.token && c.meta.contaId) || (c.google.refreshToken && c.google.customerId);
-    if (!conectado || c.regras.modo === "desligado" || agente.estaOcupado()) return;
+    if (!agente.algumaConta(c) || c.regras.modo === "desligado" || agente.estaOcupado()) return;
     const horas = Number(c.regras.intervaloCicloHoras) || 3;
     if (Date.now() - ultimoCiclo < horas * 36e5) return;
     ultimoCiclo = Date.now();
@@ -347,10 +375,24 @@ setInterval(async () => {
       if (r.novas) console.log(`💰 Debian Analytics: ${r.novas} venda(s) nova(s)!`);
     }
     const c = await agente.carregarConfig();
-    const conectado = (c.meta.token && c.meta.contaId) || (c.google.refreshToken && c.google.customerId);
-    if (conectado && Date.now() - ultimaGastos > 20 * 60000) { ultimaGastos = Date.now(); await analytics.sincronizarGastos(); }
+    if (agente.algumaConta(c) && Date.now() - ultimaGastos > 20 * 60000) { ultimaGastos = Date.now(); await analytics.sincronizarGastos(); }
   } catch (e) { console.log("💰 Debian Analytics: " + e.message); }
 }, 2 * 60000);
+
+// Resumo do dia no Telegram, no horário escolhido (padrão 22h).
+let ultimoResumo = "";
+setInterval(async () => {
+  try {
+    const c = await agente.carregarConfig();
+    const tg = c.telegram || {};
+    if (!tg.ativo || !tg.token || !tg.chatId || tg.tipos?.resumo === false) return;
+    const agora = new Date(), dia = agora.toDateString();
+    if (agora.getHours() !== (Number(tg.horaResumo) || 22) || ultimoResumo === dia) return;
+    ultimoResumo = dia;
+    const [rel, est] = await Promise.all([analytics.gerarRelatorio({ periodo: "hoje" }), agente.estado()]);
+    await avisos.avisar(c, "resumo", avisos.msgResumo(c, rel, (est.pendentes || []).length));
+  } catch (e) { console.log("🔔 " + e.message); }
+}, 60000);
 
 if (HORA_DIARIA !== null) {
   setInterval(() => {

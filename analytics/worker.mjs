@@ -26,7 +26,7 @@ export default {
       for (const k of ["content-type", "x-hotmart-hottok", "x-kiwify-digital-signature", "x-cakto-signature", "x-cakto-timestamp", "user-agent"]) { const v = req.headers.get(k); if (v) cab[k] = v; }
       await env.DB.prepare("INSERT INTO eventos (plataforma, recebido, tipo, cabecalhos, query, corpo) VALUES (?, ?, ?, ?, ?, ?)")
         .bind((p[2] || "generico").slice(0, 30), new Date().toISOString(), req.headers.get("content-type") || "", JSON.stringify(cab), url.search, corpo).run();
-      return new Response("ok");
+      return new Response("OK");
     }
 
     // Minerador busca os eventos: /sync?desde=ID
@@ -51,20 +51,43 @@ export default {
 `;
 }
 
+// [id, nome, onde cadastrar, região]. Regiões: br (Brasil), us (EUA), eu (Europa), global.
 export const PLATAFORMAS_CHECKOUT = [
-  ["hotmart", "Hotmart", "Ferramentas → Webhook (API e notificações) → Cadastrar webhook. Versão 2.0.0, marque todos os eventos de compra."],
-  ["kiwify", "Kiwify", "Apps → Webhooks → Criar webhook. Marque compra aprovada, recusada, reembolso, chargeback, boleto/pix gerado."],
-  ["eduzz", "Eduzz", "Configurações → Webhook/Notificações de venda: cole a URL e marque todos os status."],
-  ["monetizze", "Monetizze", "Ferramentas → Postback: cole a URL e marque todos os status de venda."],
-  ["braip", "Braip", "Ferramentas → Postback: cadastre a URL para todos os eventos."],
-  ["perfectpay", "PerfectPay", "Ferramentas → Webhook: cadastre a URL para todos os produtos e status."],
-  ["ticto", "Ticto", "Integrações → Webhook: cole a URL e selecione todos os eventos de venda."],
-  ["cakto", "Cakto", "Integrações → Webhooks → Novo webhook: cole a URL e marque compra aprovada, recusada, reembolso, chargeback, pix/boleto gerado e pix expirado. Copie o “secret” e cole em Custos e segurança."],
-  ["greenn", "Greenn", "Integrações → Webhook: cole a URL e marque todos os status."],
-  ["kirvano", "Kirvano", "Integrações → Webhooks: cole a URL e marque os eventos de venda."],
-  ["yampi", "Yampi", "Configurações → Webhooks: eventos order.paid e order.status.updated."],
-  ["shopify", "Shopify", "Configurações → Notificações → Webhooks: “Criação de pedido” e “Pagamento do pedido”, formato JSON."],
-  ["generico", "Outra plataforma", "Use esta URL em qualquer checkout que envie webhook/postback de vendas."],
+  ["hotmart", "Hotmart", "Ferramentas → Webhook (API e notificações) → Cadastrar webhook. Versão 2.0.0, marque todos os eventos de compra.", "br"],
+  ["kiwify", "Kiwify", "Apps → Webhooks → Criar webhook. Marque compra aprovada, recusada, reembolso, chargeback, boleto/pix gerado.", "br"],
+  ["cakto", "Cakto", "Integrações → Webhooks → Novo webhook: cole a URL e marque compra aprovada, recusada, reembolso, chargeback, pix/boleto gerado e pix expirado. Copie o “secret” e cole em Custos e segurança.", "br"],
+  ["eduzz", "Eduzz", "Configurações → Webhook/Notificações de venda: cole a URL e marque todos os status.", "br"],
+  ["monetizze", "Monetizze", "Ferramentas → Postback: cole a URL e marque todos os status de venda.", "br"],
+  ["braip", "Braip", "Ferramentas → Postback: cadastre a URL para todos os eventos.", "br"],
+  ["perfectpay", "PerfectPay", "Ferramentas → Webhook: cadastre a URL para todos os produtos e status.", "br"],
+  ["ticto", "Ticto", "Integrações → Webhook: cole a URL e selecione todos os eventos de venda.", "br"],
+  ["guru", "Digital Manager Guru", "Configurações → Webhooks → Novo: cole a URL e marque transações (aprovada, reembolsada, chargeback).", "br"],
+  ["greenn", "Greenn", "Integrações → Webhook: cole a URL e marque todos os status.", "br"],
+  ["kirvano", "Kirvano", "Integrações → Webhooks: cole a URL e marque os eventos de venda.", "br"],
+  ["lastlink", "Lastlink", "Integrações → Webhooks: cole a URL e marque compras, reembolsos e chargebacks.", "br"],
+  ["hubla", "Hubla", "Integrações → Webhooks: cole a URL e marque os eventos de venda.", "br"],
+  ["mercadopago", "Mercado Pago", "Suas integrações → sua aplicação → Webhooks: cole a URL e marque “Pagamentos”. Cole também o Access Token de produção em Custos e segurança (o aviso do Mercado Pago só traz o ID do pagamento).", "br"],
+  ["pagarme", "Pagar.me", "Configurações → Webhooks: cole a URL e marque order.paid, charge.refunded e charge.chargedback.", "br"],
+  ["asaas", "Asaas", "Integrações → Webhooks: cole a URL e marque os eventos de cobrança (recebida, estornada, chargeback).", "br"],
+  ["pagseguro", "PagBank (PagSeguro)", "Integrações → Notificações/Webhooks: cole a URL para pedidos e cobranças.", "br"],
+  ["appmax", "Appmax", "Configurações → Webhooks: cole a URL e marque pedidos pagos, reembolsados e chargebacks.", "br"],
+  ["yampi", "Yampi", "Configurações → Webhooks: eventos order.paid e order.status.updated.", "br"],
+  ["cartpanda", "Cartpanda", "Configurações → Webhooks: cole a URL para pedidos pagos e reembolsados.", "br"],
+  ["nuvemshop", "Nuvemshop", "Use um app de webhook da loja: eventos order/paid e order/cancelled.", "br"],
+  ["stripe", "Stripe", "Developers → Webhooks → Add endpoint: cole a URL e marque checkout.session.completed, payment_intent.succeeded, charge.refunded e charge.dispute.created. Passe as UTMs em “metadata” ou o sck em client_reference_id.", "global"],
+  ["paypal", "PayPal", "developer.paypal.com → seu app → Webhooks: cole a URL e marque PAYMENT.CAPTURE.COMPLETED, REFUNDED e REVERSED. Mande as UTMs no custom_id.", "global"],
+  ["shopify", "Shopify", "Configurações → Notificações → Webhooks: “Pagamento do pedido” e “Reembolso”, formato JSON. As UTMs vêm do link de chegada da loja.", "global"],
+  ["woocommerce", "WooCommerce", "WooCommerce → Configurações → Avançado → Webhooks: “Pedido atualizado”, versão mais nova da API. As UTMs vêm da atribuição de pedidos do WooCommerce.", "global"],
+  ["clickbank", "ClickBank", "Vendor Settings → My Site → Advanced Tools → Instant Notification URL (versão 8.0). Cole a Secret Key em Custos e segurança para descriptografar os avisos.", "us"],
+  ["buygoods", "BuyGoods", "Settings → IPN/Postback: cole a URL para vendas, reembolsos e chargebacks.", "us"],
+  ["thrivecart", "ThriveCart", "Settings → API & Webhooks → Webhooks & notifications: cole a URL.", "us"],
+  ["samcart", "SamCart", "Settings → Integrations → Webhooks/Notifications: cole a URL para Order e Refund.", "us"],
+  ["gumroad", "Gumroad", "Settings → Advanced → Ping: cole a URL.", "us"],
+  ["lemonsqueezy", "Lemon Squeezy", "Settings → Webhooks: cole a URL e marque order_created e order_refunded. Passe as UTMs em checkout[custom].", "us"],
+  ["digistore24", "Digistore24", "Settings → Integrations (IPN) → Generic: cole a URL e marque todos os eventos. As UTMs vão em “custom” ou nos parâmetros utm_.", "eu"],
+  ["paddle", "Paddle", "Developer Tools → Notifications → New destination: cole a URL e marque transaction.completed e adjustment.created. Passe as UTMs em custom_data.", "eu"],
+  ["mollie", "Mollie", "Use a URL como webhookUrl dos pagamentos (o Mollie avisa só o ID; funciona melhor com Stripe ou Paddle).", "eu"],
+  ["generico", "Outra plataforma", "Use esta URL em qualquer checkout que envie webhook/postback de vendas.", "global"],
 ];
 
 // Script para a página de vendas: guarda as UTMs e repassa para os links de checkout.
@@ -77,9 +100,11 @@ export function scriptPagina() {
   if(K.some(function(k){return q.get(k)})){u={};K.forEach(function(k){if(q.get(k))u[k]=q.get(k)});try{localStorage.setItem("debian_utm",JSON.stringify(u))}catch(e){}}
   if(!Object.keys(u).length)return;
   var id=function(v){var m=String(v||"").match(/(\\d{5,})\\s*$/);return m?m[1]:""};
-  var s=String(u.utm_source||"").toLowerCase(),pre=/google|gads|youtube/.test(s)?"G":"FB";
+  var s=String(u.utm_source||"").toLowerCase(),pre=/google|gads|youtube/.test(s)?"G":/tiktok/.test(s)?"TT":/kwai/.test(s)?"KW":"FB";
+  var idG=/google|gads|youtube|kwai/.test(s);
+  if(idG)id=function(v){var m=String(v||"").match(/(\\d+)\\s*$/);return m?m[1]:""};
   var sck=id(u.utm_campaign)&&id(u.utm_content)?pre+"_"+id(u.utm_campaign)+"_"+(id(u.utm_medium)||"0")+"_"+id(u.utm_content):"";
-  function marcar(a){try{var l=new URL(a.href);if(!/pay\\.|checkout|hotmart|kiwify|eduzz|monetizze|braip|perfectpay|ticto|cakto|greenn|kirvano|yampi|cartpanda|myshopify/i.test(l.hostname+l.pathname))return;
+  function marcar(a){try{var l=new URL(a.href);if(!/pay\\.|checkout|hotmart|kiwify|eduzz|monetizze|braip|perfectpay|ticto|cakto|greenn|kirvano|yampi|cartpanda|myshopify|guru|lastlink|hubla|appmax|mercadopago|pagar\\.me|stripe|paypal|clickbank|digistore24|paddle|thrivecart|samcart|gumroad|lemonsqueezy|buygoods/i.test(l.hostname+l.pathname))return;
     K.forEach(function(k){if(u[k]&&!l.searchParams.get(k))l.searchParams.set(k,u[k])});
     if(sck){if(!l.searchParams.get("sck"))l.searchParams.set("sck",sck);if(!l.searchParams.get("src"))l.searchParams.set("src",sck)}
     a.href=l.toString()}catch(e){}}

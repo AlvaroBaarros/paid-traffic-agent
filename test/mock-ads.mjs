@@ -1,4 +1,4 @@
-// Imitação das APIs da Meta, do Google Ads e do Claude, para testar o agente sem mexer em contas reais.
+// Imitação das APIs da Meta, Google Ads, TikTok, Kwai, Telegram, Mercado Pago e Claude, para testar o agente sem mexer em contas reais.
 export const registro = [];
 
 const meta = {
@@ -115,6 +115,87 @@ function respGoogle(url, init) {
   return new Response(JSON.stringify({ error: { message: "não simulado" } }), { status: 400 });
 }
 
+
+// ---------- TikTok ----------
+const tt = {
+  camp: [{ campaign_id: "1801", campaign_name: "TT · Protocolo Seca", operation_status: "ENABLE", budget: 120, budget_mode: "BUDGET_MODE_DAY", budget_optimize_on: true }],
+  conj: [{ adgroup_id: "1802", adgroup_name: "TT · Amplo BR", campaign_id: "1801", operation_status: "ENABLE", budget_mode: "BUDGET_MODE_INFINITE" }],
+  ads: [
+    { ad_id: "1803", ad_name: "TT01 · gancho dor", adgroup_id: "1802", campaign_id: "1801", operation_status: "ENABLE", ad_text: "Pare de lutar contra a balança." },
+    { ad_id: "1804", ad_name: "TT02 · trend", adgroup_id: "1802", campaign_id: "1801", operation_status: "ENABLE", ad_text: "Esse truque viralizou." },
+  ],
+  rel: { hoje: { 1803: [25, 6000, 90, 1, 1.2], 1804: [20, 5000, 20, 0, 1.3] }, d3: { 1803: [90, 20000, 300, 3, 1.6], 1804: [85, 18000, 60, 0, 1.8] }, d7: { 1803: [180, 40000, 640, 6, 3.2], 1804: [170, 36000, 140, 0, 3.4] } },
+};
+function respTiktok(url, init) {
+  const u = new URL(url), caminho = u.pathname.replace("/open_api/v1.3/", "");
+  const ok = (data) => new Response(JSON.stringify({ code: 0, message: "OK", data }), { status: 200 });
+  if (init.headers?.["Access-Token"] === "ruim") return new Response(JSON.stringify({ code: 40105, message: "Access token is incorrect or has been revoked." }), { status: 200 });
+  const pag = (list) => ok({ list, page_info: { page: 1, page_size: 1000, total_number: list.length, total_page: 1 } });
+  if (caminho === "advertiser/info/") return ok({ list: [{ advertiser_id: "7000", name: "TikTok do Debian", currency: "BRL" }] });
+  if (caminho === "campaign/get/") return pag(tt.camp);
+  if (caminho === "adgroup/get/") return pag(tt.conj);
+  if (caminho === "ad/get/") return pag(tt.ads);
+  if (caminho === "report/integrated/get/") {
+    const dims = JSON.parse(u.searchParams.get("dimensions")), a = u.searchParams.get("start_date"), b = u.searchParams.get("end_date");
+    const hoje = new Date().toISOString().slice(0, 10);
+    if (dims.includes("stat_time_day")) {
+      const list = [];
+      for (let d = a; d <= b; d = new Date(Date.parse(d + "T12:00:00Z") + 864e5).toISOString().slice(0, 10)) for (const [id, [g, imp, cl]] of Object.entries(tt.rel.d7)) list.push({ dimensions: { ad_id: id, stat_time_day: d + " 00:00:00" }, metrics: { spend: String(g / 7), impressions: String(imp / 7), clicks: String(cl / 7) } });
+      return pag(list);
+    }
+    const j = a === hoje ? "hoje" : b === a ? "hoje" : (Date.parse(b) - Date.parse(a)) / 864e5 > 3 ? "d7" : "d3";
+    return pag(Object.entries(tt.rel[j]).map(([id, [g, imp, cl, conv, f]]) => ({ dimensions: { ad_id: id }, metrics: { spend: String(g), impressions: String(imp), clicks: String(cl), conversion: String(conv), frequency: String(f) } })));
+  }
+  const corpo = JSON.parse(init.body || "{}");
+  registro.push({ plataforma: "tiktok", caminho, corpo });
+  if (caminho === "ad/status/update/") { for (const id of corpo.ad_ids) { const a = tt.ads.find((x) => x.ad_id === id); if (a) a.operation_status = corpo.operation_status; } return ok({ ad_ids: corpo.ad_ids }); }
+  if (caminho === "adgroup/status/update/" || caminho === "campaign/status/update/") return ok({});
+  if (caminho === "campaign/update/") { tt.camp[0].budget = corpo.budget; return ok({}); }
+  if (caminho === "adgroup/budget/update/") return ok({});
+  return new Response(JSON.stringify({ code: 40002, message: "não simulado: " + caminho }), { status: 200 });
+}
+
+// ---------- Kwai ----------
+const kw = { cri: [{ creativeId: 5501, creativeName: "KW01 · depoimento", unitId: 5502, campaignId: 5503, openStatus: 1, dataGenerationSource: 2 }, { creativeId: 5504, creativeName: "KW02 · antes e depois", unitId: 5502, campaignId: 5503, openStatus: 1, dataGenerationSource: 1 }] };
+function respKwai(url, init) {
+  const ok = (data) => new Response(JSON.stringify({ status: 200, message: "成功", data }), { status: 200 });
+  if (url.startsWith("https://business.kwai.com/oauth/token")) return new Response(JSON.stringify({ access_token: "kw-acesso", refresh_token: "kw-refresh-2", expires_in: 3599 }));
+  const caminho = new URL(url).pathname.replace("/rest/n/mapi", "");
+  const corpo = JSON.parse(init.body || "{}");
+  if (caminho === "/report/dspAccountEffectQuery") return ok({ total: 1, data: [{ accountId: corpo.accountId, accountName: "Kwai do Debian", cost: 50e6 }] });
+  if (caminho === "/report/dspCreativeEffectQuery") {
+    const dias = Math.max(1, Math.round((corpo.dataEndTime - corpo.dataBeginTime) / 864e5));
+    return ok({ total: 2, data: kw.cri.map((c, i) => ({ time: corpo.dataBeginTime, campaignId: c.campaignId, campaignName: "Kwai · Seca", unitId: c.unitId, unitName: "Kwai · amplo", id: c.creativeId, creativeName: c.creativeName, cost: (i ? 30 : 60) * 1e6 * dias, exposure: 8000 * dias, click: (i ? 40 : 160) * dias, action: i ? 0 : dias })) });
+  }
+  if (caminho === "/campaign/dspCampaignPageQueryPerformance") return ok({ total: 1, data: [{ campaignId: 5503, campaignName: "Kwai · Seca", openStatus: 1 }] });
+  if (caminho === "/unit/dspUnitPageQueryPerformance") return ok({ total: 1, data: [{ unitId: 5502, unitName: "Kwai · amplo", campaignId: 5503, openStatus: 1, budgetType: 2, dayBudget: 80e6 }] });
+  if (caminho === "/creative/dspCreativePageQueryPerformance") return ok({ total: kw.cri.length, data: kw.cri });
+  registro.push({ plataforma: "kwai", caminho, corpo });
+  if (caminho === "/creative/dspCreativeUpdateOpenStatusPerformance") {
+    const okIds = corpo.creativeIdList.filter((id) => kw.cri.find((c) => c.creativeId === id)?.dataGenerationSource === 2);
+    for (const id of okIds) kw.cri.find((c) => c.creativeId === id).openStatus = corpo.openStatus;
+    return ok({ total: okIds.length, successIdList: okIds });
+  }
+  if (caminho === "/unit/dspUnitUpdateBudgetPerformance") return ok({ total: 1, data: [{ accountId: corpo.accountId, unitId: 5502 }] });
+  return new Response(JSON.stringify({ status: 400, message: "não simulado: " + caminho }), { status: 200 });
+}
+
+// ---------- Telegram e Mercado Pago ----------
+export const telegramEnviadas = [];
+function respTelegram(url, init) {
+  const metodo = url.split("/").pop();
+  const ok = (result) => new Response(JSON.stringify({ ok: true, result }));
+  if (url.includes("/botruim/")) return new Response(JSON.stringify({ ok: false, description: "Unauthorized" }), { status: 401 });
+  if (metodo === "getMe") return ok({ id: 1, username: "debian_avisos_bot" });
+  if (metodo === "getUpdates") return ok([{ update_id: 1, message: { chat: { id: 987654, first_name: "Debian" }, text: "oi" } }]);
+  if (metodo === "sendMessage") { telegramEnviadas.push(JSON.parse(init.body)); return ok({ message_id: telegramEnviadas.length }); }
+  return ok(true);
+}
+function respMercadoPago(url) {
+  const id = url.split("/").pop();
+  return new Response(JSON.stringify({ id: Number(id), status: "approved", transaction_amount: 67, transaction_details: { net_received_amount: 63.5 }, currency_id: "BRL", payment_method_id: "pix", payment_type_id: "bank_transfer", description: "Guia Cachorro Vizinho", payer: { email: "mp@x.com" }, metadata: { utm_source: "tiktok", utm_campaign: "TT · Protocolo Seca|1801", utm_medium: "TT · Amplo BR|1802", utm_content: "TT01 · gancho dor|1803" }, date_created: new Date().toISOString(), date_approved: new Date().toISOString() }));
+}
+
 function respClaude(init) {
   const corpo = JSON.parse(init.body);
   const p = corpo.messages[0].content;
@@ -149,6 +230,8 @@ export function instalarMockAds() {
   empurrarWorker("kiwify", kiwi("KW9", "A1", "S1", C1, "AD01 · gancho dor", 97, "waiting_payment"));
   empurrarWorker("kiwify", kiwi("KB1", "B1", "S2", C2, "AD01 · aula grátis", 47));
   empurrarWorker("cakto", { secret: "s", event: "purchase_approved", data: { id: "ck-77", refId: "X1", status: "paid", amount: 197, fees: 12, paymentMethod: "pix", paymentMethodName: "Pix", customer: { name: "Bia", email: "bia@x.com" }, product: { id: "m1", name: "Mentoria" }, commissions: [{ type: "producer", totalAmount: 185 }], utm_source: "google", utm_campaign: "77", utm_medium: "11", utm_content: "111", createdAt: hojeISO, paidAt: hojeISO } });
+  empurrarWorker("mercadopago", { action: "payment.created", type: "payment", data: { id: "9911" } });
+  empurrarWorker("stripe", { id: "evt_1", object: "event", type: "checkout.session.completed", created: Math.floor(Date.now() / 1000), livemode: true, data: { object: { id: "cs_1", object: "checkout.session", payment_intent: "pi_1", amount_total: 4900, currency: "usd", payment_status: "paid", customer_details: { email: "us@x.com", name: "John" }, metadata: { produto: "Dog Guide (EN)", utm_source: "kwai", utm_campaign: "5503", utm_medium: "5502", utm_content: "5501" } } } });
   empurrarWorker("hotmart", { event: "PURCHASE_APPROVED", data: { product: { id: 9, name: "Ebook Receitas" }, buyer: { email: "z@x.com", name: "Zé" }, commissions: [{ source: "PRODUCER", value: 30 }], purchase: { transaction: "HP9", status: "APPROVED", order_date: Date.now(), approved_date: Date.now(), price: { value: 37 }, payment: { type: "BILLET" }, origin: {} } } });
   const original = globalThis.fetch;
   globalThis.fetch = async (url, init = {}) => {
@@ -156,6 +239,10 @@ export function instalarMockAds() {
     if (u.startsWith("https://graph.facebook.com/")) return respMeta(u, init);
     if (u.includes("googleads.googleapis.com") || u.includes("oauth2.googleapis.com")) return respGoogle(u, init);
     if (u.startsWith("https://api.anthropic.com/")) return respClaude(init);
+    if (u.startsWith("https://business-api.tiktok.com/")) return respTiktok(u, init);
+    if (u.startsWith("https://developers.kwai.com/") || u.startsWith("https://business.kwai.com/")) return respKwai(u, init);
+    if (u.startsWith("https://api.telegram.org/")) return respTelegram(u, init);
+    if (u.startsWith("https://api.mercadopago.com/")) return respMercadoPago(u);
     if (u.startsWith("https://debian-webhooks.teste.workers.dev")) return respWorker(u, init);
     return original(url, init);
   };

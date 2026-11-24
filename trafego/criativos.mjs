@@ -16,17 +16,22 @@ ${copies}`;
   return `\n\nOFERTAS ESCALADAS DE REFERÊNCIA (encontradas na Biblioteca de Anúncios — use para entender ângulos, promessas e estruturas que estão funcionando; NÃO copie frases):\n\n${partes.join("\n\n")}`;
 }
 
-export function promptCriativos({ brief = {}, referencias = [], plataformas = ["meta"], formato = "texto" }) {
+const IDIOMAS = { pt: "Português do Brasil", en: "inglês americano (English, US)", es: "espanhol neutro (Latinoamérica/Espanha)" };
+
+export function promptCriativos({ brief = {}, referencias = [], plataformas = ["meta"], formato = "texto", idioma = "pt" }) {
   const b = brief;
   const comGoogle = plataformas.includes("google");
+  const comTt = plataformas.includes("tiktok") || plataformas.includes("kwai");
+  const lingua = IDIOMAS[idioma] || IDIOMAS.pt;
   const dados = [
     ["Produto/oferta", b.produto], ["Promessa principal", b.promessa], ["Público", b.publico], ["Dor principal", b.dor],
     ["Mecanismo / diferencial", b.mecanismo], ["Preço e condições", b.preco], ["Provas (depoimentos, números)", b.provas],
-    ["Tipo de funil", b.funil], ["Tom de voz", b.tom || "conversa direta, brasileira, sem exagero"], ["Link", b.link], ["Observações", b.obs],
+    ["Tipo de funil", b.funil], ["Tom de voz", b.tom || (idioma === "pt" ? "conversa direta, brasileira, sem exagero" : "conversa direta, sem exagero")], ["Link", b.link], ["Observações", b.obs], ["Contexto", b.extra],
   ].filter(([, v]) => v && String(v).trim()).map(([k, v]) => `- ${k}: ${String(v).trim()}`).join("\n");
 
-  const pedido = `Você é um copywriter de resposta direta e gestor de tráfego sênior no mercado digital brasileiro.
-Crie os criativos para a oferta abaixo, prontos para subir no Meta Ads${comGoogle ? " e no Google Ads" : ""}.
+  const pedido = `Você é um copywriter de resposta direta e gestor de tráfego sênior.
+Crie os criativos para a oferta abaixo, prontos para subir no Meta Ads${comGoogle ? ", no Google Ads" : ""}${comTt ? ", no TikTok e no Kwai" : ""}.
+Escreva TODOS os textos dos anúncios em ${lingua}.
 
 MINHA OFERTA:
 ${dados || "- (sem briefing: deduza a partir das referências e diga o que assumiu)"}${blocoReferencias(referencias)}
@@ -34,13 +39,13 @@ ${dados || "- (sem briefing: deduza a partir das referências e diga o que assum
 REGRAS:
 - Modele ângulos e estruturas das referências, mas escreva tudo original para a MINHA oferta.
 - Respeite as políticas de anúncios da Meta: nada de resultado garantido, nada de "antes e depois" em saúde/emagrecimento, não aponte características pessoais do leitor ("você está acima do peso?"), nada de falsa urgência ou promessas de dinheiro fácil.
-- Português do Brasil, frases curtas, linguagem falada.
+- ${lingua}, frases curtas, linguagem falada, natural para o público desse país.${comTt ? "\n- TikTok e Kwai: vídeo vertical 9:16, cara de conteúdo nativo (UGC), gancho falado e escrito na tela nos 2 primeiros segundos, sem cara de anúncio." : ""}
 
 ENTREGUE:
 1. 10 ganchos para os 3 primeiros segundos do vídeo (variando ângulo: dor, curiosidade, contraintuitivo, prova, identificação).
 2. 5 textos principais para o anúncio: curto (até 125 caracteres), médio, longo, storytelling e focado em prova.
 3. 10 títulos (até 40 caracteres) e 5 descrições (até 30 caracteres).
-4. 3 roteiros de vídeo de 30 a 60 segundos (UGC/selfie, demonstração e depoimento), com cenas: tempo, o que aparece na tela e a fala.
+4. ${comTt ? "5" : "3"} roteiros de vídeo de ${comTt ? "15 a 45" : "30 a 60"} segundos (UGC/selfie, demonstração e depoimento${comTt ? ", trend do TikTok e reação/dueto" : ""}), com cenas: tempo, o que aparece na tela e a fala.
 ${comGoogle ? "5. Google Ads (pesquisa): 15 títulos de até 30 caracteres, 4 descrições de até 90 caracteres e 20 palavras-chave com o tipo de correspondência sugerido.\n" : ""}${comGoogle ? "6" : "5"}. 3 ideias de teste A/B para começar e o que observar em cada uma.`;
 
   if (formato !== "json") return pedido;

@@ -8,6 +8,9 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐉%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta name="idioma-padrao" content="auto">
+<script src="i18n-en.js"></script>
+<script src="i18n.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>if(!window.Chart)document.write('<script src="vendor/chart.umd.js"><\/script>')</script>
 <style>
@@ -34,11 +37,38 @@ header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18p
 .spacer{flex:1}
 .app{display:grid;grid-template-columns:262px 1fr;min-height:100vh}
 .side{position:sticky;top:0;height:100vh;overflow:auto;background:linear-gradient(180deg,#081509 0%,#050906 70%);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:6px;z-index:60}
-.menu{display:flex;flex-direction:column;gap:2px}
-.menu a{display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:10px;color:var(--muted);font-weight:600;font-size:13.5px;cursor:pointer;text-decoration:none;user-select:none}
-.menu a:hover{background:var(--panel2);color:var(--text);text-decoration:none}
+.menu{display:flex;flex-direction:column;gap:3px}
+.menu a,.gtit{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:10px;color:var(--muted);font-weight:600;font-size:13.5px;cursor:pointer;text-decoration:none;user-select:none;background:none;border:none;width:100%;text-align:left;font-family:inherit}
+.menu a:hover,.gtit:hover{background:var(--panel2);color:var(--text);text-decoration:none}
 .menu a.on{background:rgba(34,197,94,.15);color:#4ade80;box-shadow:inset 3px 0 0 #22c55e}
-.menu .grp{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#6f9a7b;margin:16px 10px 5px;font-weight:700}
+.menu i{font-style:normal;width:22px;text-align:center;flex:none;font-size:15px}
+.gtit .chev{margin-left:auto;transition:transform .18s;color:var(--dim);font-size:13px}
+.grupo.aberto>.gtit{color:var(--text)}.grupo.aberto>.gtit .chev{transform:rotate(90deg)}
+.grupo.ativo>.gtit{color:#4ade80}
+.gitens{display:none;flex-direction:column;gap:1px;margin:2px 0 6px 21px;padding-left:10px;border-left:1px solid var(--line2)}
+.grupo.aberto>.gitens{display:flex}
+.gitens a{font-size:13px;padding:7px 10px;font-weight:500}
+.recolher{margin-left:auto;background:var(--panel2);border:1px solid var(--line2);color:var(--muted);border-radius:8px;width:28px;height:28px;display:grid;place-items:center;font-size:14px;padding:0}
+.recolher:hover{color:var(--text);border-color:var(--accent)}
+@media(min-width:901px){
+.app.mini{grid-template-columns:68px 1fr}
+.app.mini .side{padding:16px 8px;align-items:center}
+.app.mini .logo .nome,.app.mini .menu span,.app.mini .chev,.app.mini .gitens,.app.mini .sidefoot,.app.mini #idiomaSide{display:none!important}
+.app.mini .logo{flex-direction:column;padding:4px 0 10px!important}
+.app.mini .recolher{margin:6px 0 0;transform:rotate(180deg)}
+.app.mini .menu a,.app.mini .gtit{justify-content:center;padding:10px 0}
+.app.mini .menu i{font-size:18px}
+}
+.idioma{display:inline-flex;background:var(--panel2);border:1px solid var(--line2);border-radius:999px;padding:2px;gap:2px}
+.idioma button{display:inline-flex;align-items:center;gap:6px;border:none;background:none;color:var(--muted);font-weight:600;font-size:12.5px;padding:5px 10px;border-radius:999px}
+.idioma button.on{background:rgba(34,197,94,.18);color:#4ade80}
+.moedas[hidden]{display:none}.moedas button{font-variant-numeric:tabular-nums}
+@media(max-width:900px){.moedas button span{display:none}}
+.idioma svg{width:20px;height:14px;border-radius:2px;flex:none;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+.saude{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:14px;padding:10px 14px;margin-bottom:14px;font-size:13px}
+.saude.falhou{background:rgba(240,82,82,.08);border-color:rgba(240,82,82,.4)}
+.forca{position:absolute;top:10px;right:10px;font-size:12px;font-weight:800;padding:4px 9px;border-radius:999px;background:rgba(0,0,0,.72);color:#fff;backdrop-filter:blur(6px)}
+.forca.f3{color:#4ade80}.forca.f2{color:#86efac}.forca.f1{color:#fbbf24}.forca.f0{color:#a3a3a3}
 .sidefoot{margin-top:auto;padding:14px 8px 4px;font-size:12px;color:var(--dim);border-top:1px solid var(--line)}
 .sidefoot b{color:#4ade80}
 #novaVersao a{display:block;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.4);color:#4ade80;border-radius:10px;padding:8px 10px;margin-bottom:10px;font-weight:600;text-decoration:none}
@@ -164,25 +194,33 @@ code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12px}
 <body>
 <div class="app">
 <aside class="side" id="side">
-  <div class="logo" style="padding:4px 8px 10px"><div class="mark">🐉</div><span class="nome">Paid Traffic Agent</span></div>
+  <div class="logo" style="padding:4px 8px 10px"><div class="mark">🐉</div><span class="nome">Paid Traffic Agent</span><button class="recolher" id="recolher" title="Recolher menu" aria-label="Recolher menu">«</button></div>
   <nav class="menu" id="menu">
-    <a data-r="inicio">🏠 Início</a>
-    <div class="grp">🧬 Clonador</div>
-    <a data-r="clonador/minerar">⛏️ Minerar ofertas</a>
-    <a data-r="clonador/criativos" class="loc">✍️ Clonar criativos & copy</a>
-    <div class="grp">📣 Gerenciador de anúncios</div>
-    <a data-r="gerenciador/visao" class="loc">📊 Visão geral</a>
-    <a data-r="gerenciador/campanhas" class="loc">📋 Campanhas</a>
-    <a data-r="gerenciador/piloto" class="loc">🤖 Piloto automático</a>
-    <a data-r="gerenciador/criar" class="loc">🚀 Criar campanha</a>
-    <a data-r="gerenciador/contas" class="loc">🔌 Contas de anúncio</a>
-    <div class="grp">💰 UTMFy do Debian</div>
-    <a data-r="utmfy/dashboard" class="loc">📈 Dashboard</a>
-    <a data-r="utmfy/campanhas" class="loc">📋 Campanhas e ROI</a>
-    <a data-r="utmfy/vendas" class="loc">🧾 Vendas</a>
-    <a data-r="utmfy/criativos" class="loc">🏆 Criativos</a>
-    <a data-r="utmfy/produtos" class="loc">📦 Produtos e pagamentos</a>
-    <a data-r="utmfy/integracoes" class="loc">🔗 Integrações</a>
+    <a data-r="inicio" title="Início"><i>🏠</i><span>Início</span></a>
+    <div class="grupo" data-g="clonador"><button class="gtit" data-g="clonador" title="Clonador"><i>🧬</i><span>Clonador</span><b class="chev">›</b></button>
+      <div class="gitens">
+        <a data-r="clonador/minerar">Minerar ofertas</a>
+        <a data-r="clonador/criativos" class="loc">Clonar criativos & copy</a>
+      </div></div>
+    <div class="grupo" data-g="gerenciador"><button class="gtit" data-g="gerenciador" title="Gerenciador de anúncios"><i>📣</i><span>Gerenciador de anúncios</span><b class="chev">›</b></button>
+      <div class="gitens">
+        <a data-r="gerenciador/visao" class="loc">Visão geral</a>
+        <a data-r="gerenciador/campanhas" class="loc">Campanhas</a>
+        <a data-r="gerenciador/piloto" class="loc">Piloto automático</a>
+        <a data-r="gerenciador/ciclo" class="loc">Ciclo de criativos</a>
+        <a data-r="gerenciador/criar" class="loc">Criar campanha</a>
+        <a data-r="gerenciador/contas" class="loc">Contas de anúncio</a>
+      </div></div>
+    <div class="grupo" data-g="utmfy"><button class="gtit" data-g="utmfy" title="UTMFy"><i>💰</i><span>UTMFy</span><b class="chev">›</b></button>
+      <div class="gitens">
+        <a data-r="utmfy/dashboard" class="loc">Dashboard</a>
+        <a data-r="utmfy/campanhas" class="loc">Campanhas e ROI</a>
+        <a data-r="utmfy/vendas" class="loc">Vendas</a>
+        <a data-r="utmfy/criativos" class="loc">Criativos</a>
+        <a data-r="utmfy/produtos" class="loc">Produtos e pagamentos</a>
+        <a data-r="utmfy/integracoes" class="loc">Integrações</a>
+      </div></div>
+    <a data-r="avisos" class="loc" title="Avisos no celular"><i>🔔</i><span>Avisos no celular</span></a>
   </nav>
   <div class="sidefoot"><button class="btn sm" id="btnCfg" style="width:100%;justify-content:center;margin-bottom:10px">⚙️ Conectar GitHub</button><div id="novaVersao"></div>🐉 Feito por <b>Debian</b> · <span id="versaoApp">beta</span></div>
 </aside>
@@ -193,6 +231,15 @@ code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12px}
   <h2 id="ptitulo">Início</h2>
   <span class="pill" id="upd">carregando…</span>
   <div class="spacer"></div>
+  <div class="idioma moedas" id="moedaTopo" title="Moeda do painel" hidden>
+    <button data-moeda="BRL">R$ <span>Real</span></button>
+    <button data-moeda="EUR">€ <span>Euro</span></button>
+    <button data-moeda="USD">US$ <span>Dólar</span></button>
+  </div>
+  <div class="idioma" id="idioma" translate="no">
+    <button data-lang="pt" title="Português"><svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#009c3b"/><path d="M10 1.6 18.4 7 10 12.4 1.6 7z" fill="#ffdf00"/><circle cx="10" cy="7" r="3.1" fill="#002776"/><path d="M7 6.4c2-.6 4.2-.4 6 .7" stroke="#fff" stroke-width=".6" fill="none"/></svg>Português</button>
+    <button data-lang="en" title="English"><svg viewBox="0 0 20 14"><rect width="20" height="14" fill="#b22234"/><g fill="#fff"><rect y="1.08" width="20" height="1.08"/><rect y="3.23" width="20" height="1.08"/><rect y="5.38" width="20" height="1.08"/><rect y="7.54" width="20" height="1.08"/><rect y="9.69" width="20" height="1.08"/><rect y="11.85" width="20" height="1.08"/></g><rect width="8.6" height="7.54" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.4" cy="1.3" r=".45"/><circle cx="3.5" cy="1.3" r=".45"/><circle cx="5.6" cy="1.3" r=".45"/><circle cx="7.5" cy="1.3" r=".45"/><circle cx="2.4" cy="2.8" r=".45"/><circle cx="4.5" cy="2.8" r=".45"/><circle cx="6.6" cy="2.8" r=".45"/><circle cx="1.4" cy="4.3" r=".45"/><circle cx="3.5" cy="4.3" r=".45"/><circle cx="5.6" cy="4.3" r=".45"/><circle cx="7.5" cy="4.3" r=".45"/><circle cx="2.4" cy="5.8" r=".45"/><circle cx="4.5" cy="5.8" r=".45"/><circle cx="6.6" cy="5.8" r=".45"/></g></svg>English</button>
+  </div>
 </header>
 <div class="wrap">
 <div id="viewInicio" hidden></div>
@@ -301,10 +348,13 @@ code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12px}
 "use strict";
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const nf=new Intl.NumberFormat("pt-BR");
+const nf=new Intl.NumberFormat(window.I18N&&window.I18N.lang==="en"?"en-US":"pt-BR");
 const num=v=>v===null||v===undefined?"–":nf.format(v);
 const safe=u=>(typeof u==="string"&&/^https?:\/\//i.test(u))?u:"";
-const PAISES=[["BR","Brasil"],["PT","Portugal"],["US","Estados Unidos"],["ES","Espanha"],["MX","México"],["AR","Argentina"],["CO","Colômbia"],["CL","Chile"],["PE","Peru"],["GB","Reino Unido"],["CA","Canadá"],["AU","Austrália"],["DE","Alemanha"],["FR","França"],["IT","Itália"],["ALL","Todos os países"]];
+const PAISES=[["BR","Brasil"],["US","Estados Unidos"],["PT","Portugal"],["ES","Espanha"],["GB","Reino Unido"],["IE","Irlanda"],["DE","Alemanha"],["AT","Áustria"],["CH","Suíça"],["FR","França"],["BE","Bélgica"],["NL","Holanda"],["IT","Itália"],["PL","Polônia"],["SE","Suécia"],["DK","Dinamarca"],["NO","Noruega"],["FI","Finlândia"],["CA","Canadá"],["MX","México"],["AR","Argentina"],["CO","Colômbia"],["CL","Chile"],["PE","Peru"],["AU","Austrália"],["NZ","Nova Zelândia"],["ZA","África do Sul"],["IN","Índia"],["PH","Filipinas"],["ALL","Todos os países"]];
+const T=s=>(window.I18N?window.I18N.t(s):s);
+const LOCALE=()=>(window.I18N&&window.I18N.lang==="en"?"en-US":"pt-BR");
+const LOCD=()=>(window.I18N&&window.I18N.lang==="en"?"en-GB":"pt-BR");
 const nomePais=c=>(PAISES.find(p=>p[0]===c)||[c,c])[1];
 const ST={escalada:"Escalada",escalando:"Escalando",rodando:"Rodando",teste:"Em teste"};
 
@@ -321,11 +371,11 @@ function repoInfo(){
 }
 
 /* ---------- dados ---------- */
-let DATA={buscas:{},ofertas:[]},HIST={ofertas:{},anunciantes:{}},OFERTAS=[];
+let DATA={buscas:{},ofertas:[]},HIST={ofertas:{},anunciantes:{}},OFERTAS=[],SAUDE=null;
 async function carregar(){
   try{
-    const [d,h]=await Promise.all([fetch("data/ofertas.json?v="+Date.now()).then(r=>r.json()),fetch("data/historico.json?v="+Date.now()).then(r=>r.ok?r.json():{}).catch(()=>({}))]);
-    DATA=d||DATA;HIST=h||HIST;
+    const [d,h,sd]=await Promise.all([fetch("data/ofertas.json?v="+Date.now()).then(r=>r.json()),fetch("data/historico.json?v="+Date.now()).then(r=>r.ok?r.json():{}).catch(()=>({})),fetch("data/saude.json?v="+Date.now()).then(r=>r.ok?r.json():null).catch(()=>null)]);
+    DATA=d||DATA;HIST=h||HIST;SAUDE=sd;
   }catch(e){DATA={buscas:{},ofertas:[]};}
   // junta a mesma oferta encontrada em palavras diferentes
   const mapa=new Map();
@@ -336,9 +386,20 @@ async function carregar(){
   }
   OFERTAS=[...mapa.values()];
   const upd=DATA.atualizadoEm?new Date(DATA.atualizadoEm):null;
-  $("#upd").textContent=upd?"atualizado "+upd.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"sem dados ainda";
+  $("#upd").textContent=upd?"atualizado "+upd.toLocaleString(LOCD(),{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"sem dados ainda";
+  renderSaude();
   preencherFiltros();renderBuscas();render();
   if(typeof rotaAtual!=="undefined"&&rotaAtual==="inicio"&&$("#viewInicio")&&!$("#viewInicio").hidden)renderInicio();
+}
+
+function renderSaude(){
+  let b=$("#saude");if(!b){b=document.createElement("div");b.id="saude";$("#buscas").before(b);}
+  const sd=SAUDE;
+  if(!sd||sd.status==="ok"){b.className="";b.innerHTML="";return;}
+  const quando=new Date(sd.em).toLocaleString(LOCD(),{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+  const det=(sd.problemas||[]).map(p=>`<b>${esc(p.busca)}</b> (${esc(p.pais)}): ${p.antes} → ${p.agora} anúncios`).join(" · ");
+  b.className="saude"+(sd.status==="falhou"?" falhou":"");
+  b.innerHTML=sd.status==="falhou"?`🛑 <b>O robô não conseguiu ler a Biblioteca de Anúncios na última mineração</b> (${quando}). A Meta pode ter mudado o site ou bloqueado o acesso por um tempo. Tente de novo mais tarde.${det?"<br>"+det:""}`:`⚠️ <b>A última mineração trouxe menos anúncios do que o normal</b> (${quando}).${sd.reserva?" O robô precisou ler pelo modo reserva: a Meta provavelmente mudou o site.":""}${det?"<br>"+det:""}`;
 }
 
 /* ---------- filtros ---------- */
@@ -376,7 +437,7 @@ function filtradas(){
     if(q){const t=[o.anunciante,o.dominio,o.titulo,o.nicho,...(o.criativos||[]).map(c=>c.texto)].join(" ").toLowerCase();if(!t.includes(q))return false;}
     return true;
   });
-  const s={score:(a,b)=>(b.pontuacao||0)-(a.pontuacao||0),ads:(a,b)=>b.anunciosOferta-a.anunciosOferta,adv:(a,b)=>(b.anunciosAnunciante||0)-(a.anunciosAnunciante||0),dias:(a,b)=>(b.diasRodando||0)-(a.diasRodando||0),novas:(a,b)=>(a.diasRodando??1e9)-(b.diasRodando??1e9),cresc:(a,b)=>(b.crescimento??-1e9)-(a.crescimento??-1e9)}[F.sort];
+  const s={score:(a,b)=>(b.score??b.pontuacao??0)-(a.score??a.pontuacao??0),ads:(a,b)=>b.anunciosOferta-a.anunciosOferta,adv:(a,b)=>(b.anunciosAnunciante||0)-(a.anunciosAnunciante||0),dias:(a,b)=>(b.diasRodando||0)-(a.diasRodando||0),novas:(a,b)=>(a.diasRodando??1e9)-(b.diasRodando??1e9),cresc:(a,b)=>(b.crescimento??-1e9)-(a.crescimento??-1e9)}[F.sort];
   return arr.sort(s);
 }
 
@@ -408,9 +469,12 @@ function render(){
     const c=(o.criativos||[]).find(x=>x.video);
     const vid=c?(safe(c.videoSalvo)||safe(c.video.hd)||safe(c.video.sd)):"";
     const cresc=o.crescimento===null||o.crescimento===undefined?"":`<span class="chip ${o.crescimento>=0?"up":"down"}">${o.crescimento>0?"▲ +":o.crescimento<0?"▼ ":""}${o.crescimento}% em 7d</span>`;
+    const sc=o.score??null,fc=sc===null?"":sc>=70?"f3":sc>=50?"f2":sc>=30?"f1":"f0";
+    const tend={subindo:"▲ subindo",caindo:"▼ caindo",nova:"✨ nova"}[o.tendencia]||"";
     return `<article class="card" data-k="${esc(o.chave)}">
       <div class="media" data-play>${midia(o)}
         <div class="tagtl"><span class="st ${o.status}">${ST[o.status]||o.status}</span>${e.estruturada?`<span class="st estr">Estruturada</span>`:""}</div>
+        ${sc!==null?`<div class="forca ${fc}" title="Força da oferta (0 a 100): tempo no ar, volume, crescimento, criativos e constância">🔥 ${sc}</div>`:""}
         ${o.criativos&&o.criativos[0]&&o.criativos[0].criativosIguais>1?`<div class="tagbr"><span class="cnt">${o.criativos[0].criativosIguais} anúncios com este criativo</span></div>`:""}
       </div>
       <div class="cbody">
@@ -421,7 +485,7 @@ function render(){
           <div class="m"><div class="l">Do anunciante</div><div class="v">${num(o.anunciosAnunciante)}</div></div>
           <div class="m"><div class="l">Rodando há</div><div class="v">${o.diasRodando===null||o.diasRodando===undefined?"–":o.diasRodando+"d"}</div></div>
         </div>
-        <div class="chips"><span class="chip">${esc(o.nicho||"Outros")}</span><span class="chip">${esc(o.pais)}</span>${f.tipo?`<span class="chip g">${esc(f.tipo)}</span>`:""}${f.checkout?`<span class="chip g">${esc(f.checkout)}</span>`:""}${cresc}</div>
+        <div class="chips"><span class="chip">${esc(o.nicho||"Outros")}</span><span class="chip">${esc(o.pais)}</span>${f.tipo?`<span class="chip g">${esc(f.tipo)}</span>`:""}${f.checkout?`<span class="chip g">${esc(f.checkout)}</span>`:""}${cresc}${tend&&!cresc?`<span class="chip ${o.tendencia==="caindo"?"down":"up"}">${tend}</span>`:""}</div>
         <div class="cact">
           <button class="btn sm" data-det>Detalhes</button>
           ${safe(o.link)?`<a class="btn sm" href="${esc(o.link)}" target="_blank" rel="noopener">Funil ↗</a>`:""}
@@ -447,18 +511,20 @@ function abrirDetalhe(o){
   const f=o.funil||{},e=o.estrutura||{sinais:{},pontos:0};
   $("#dAdv").innerHTML=`${safe(o.avatar)?`<img src="${esc(o.avatar)}" style="width:40px;height:40px" alt="">`:""}<div style="min-width:0"><div class="n" style="font-size:17px">${esc(o.anunciante)} <span class="st ${o.status}" style="vertical-align:middle;margin-left:6px">${ST[o.status]}</span>${e.estruturada?` <span class="st estr" style="vertical-align:middle">Estruturada</span>`:""}</div><div class="d">${esc(o.titulo||"")} · ${esc(o.nicho||"")} · ${esc(nomePais(o.pais))} · palavras: ${esc((o.palavras||[o.palavra]).join(", "))}</div></div>`;
   const met=(l,v)=>`<div class="m"><div class="l">${l}</div><div class="v">${v}</div></div>`;
-  $("#dMetrics").innerHTML=met("Anúncios na oferta",num(o.anunciosOferta))+met("Anúncios do anunciante",num(o.anunciosAnunciante))+met("Criativos diferentes",num(o.criativosDiferentes))+met("Rodando há",o.diasRodando!=null?o.diasRodando+" dias":"–")+met("Desde",o.inicioMaisAntigo?new Date(o.inicioMaisAntigo+"T12:00").toLocaleDateString("pt-BR"):"–")+met("Crescimento 7d",o.crescimento!=null?(o.crescimento>0?"+":"")+o.crescimento+"%":"–");
+  const fNome={"muito forte":"muito forte","forte":"forte","media":"média","fraca":"fraca"}[o.forca]||"";
+  $("#dMetrics").innerHTML=(o.score!=null?met("Força da oferta",`🔥 ${o.score}<span class="note" style="font-size:11px;font-weight:500"> /100 · ${fNome}</span>`):"")+met("Anúncios na oferta",num(o.anunciosOferta))+met("Anúncios do anunciante",num(o.anunciosAnunciante))+met("Criativos diferentes",num(o.criativosDiferentes))+met("Rodando há",o.diasRodando!=null?o.diasRodando+" dias":"–")+met("Desde",o.inicioMaisAntigo?new Date(o.inicioMaisAntigo+"T12:00").toLocaleDateString(LOCD()):"–")+met("Crescimento 7d",o.crescimento!=null?(o.crescimento>0?"+":"")+o.crescimento+"%":"–");
   const lk=(u,t)=>safe(u)?`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t||u)}</a>`:"–";
   $("#dFunil").innerHTML=`<span>Link do anúncio</span><span>${lk(o.link)}</span><span>Página final</span><span>${lk(f.urlFinal)}</span><span>Tipo de funil</span><span>${esc(f.tipo||"não analisado")}</span><span>Checkout</span><span>${esc(f.checkout||"não encontrado")}</span><span>Link do checkout</span><span>${lk(f.linkCheckout)}</span><span>Pixel da Meta</span><span>${f.urlFinal?(f.pixelMeta?"sim":"não"):"–"}</span><span>Título da página</span><span>${esc(f.titulo||"–")}</span><span>Biblioteca</span><span>${lk(o.biblioteca,"Todos os anúncios do anunciante ↗")}</span>`;
   const s=e.sinais||{};const ck=(b,t)=>`<div class="${b?"ok":"no"}">${b?"✔":"○"} ${t}</div>`;
   $("#dEstrT").textContent=`Estrutura · ${e.pontos||0}/5 sinais`;
-  $("#dEstr").innerHTML=ck(s.paginaPropria,"Tem página própria (não vai direto pro WhatsApp)")+ck(s.checkout,"Checkout identificado")+ck(s.pixel,"Pixel da Meta instalado")+ck(s.variosCriativos,"3 ou mais criativos diferentes")+ck(s.rodando7dias,"Rodando há 7 dias ou mais")+`<div class="note" style="margin-top:6px">4 ou mais sinais = oferta estruturada (funil completo e validada pelo tempo).</div>`;
+  const sin=(o.sinais||[]).map(x=>window.I18N&&window.I18N.lang==="en"?x.en:x.pt);
+  $("#dEstr").innerHTML=ck(s.paginaPropria,"Tem página própria (não vai direto pro WhatsApp)")+ck(s.checkout,"Checkout identificado")+ck(s.pixel,"Pixel da Meta instalado")+ck(s.variosCriativos,"3 ou mais criativos diferentes")+ck(s.rodando7dias,"Rodando há 7 dias ou mais")+`<div class="note" style="margin-top:6px">4 ou mais sinais = oferta estruturada (funil completo e validada pelo tempo).</div>`+(sin.length?`<div style="margin-top:8px;font-size:13px">🔥 <b>Por que é forte:</b> ${sin.map(esc).join(" · ")}</div>`:"");
   // criativos
   const crs=o.criativos||[];
   $("#dCrN").textContent=`· ${crs.length} mostrados`;
   $("#dCrs").innerHTML=crs.map((c,i)=>{const v=c.video?(safe(c.videoSalvo)||safe(c.video.hd)||safe(c.video.sd)):"";
     return `<div class="cr">${v?`<video controls preload="none" playsinline poster="${esc(safe(c.thumb))}" src="${esc(v)}"></video>`:safe(c.thumb)?`<img loading="lazy" src="${esc(c.thumb)}" alt="">`:""}
-    <div class="ct"><div><b>${num(c.criativosIguais)}</b> anúncio${c.criativosIguais>1?"s":""} com este criativo · desde ${c.inicio?new Date(c.inicio+"T12:00").toLocaleDateString("pt-BR"):"–"}</div>
+    <div class="ct"><div><b>${num(c.criativosIguais)}</b> anúncio${c.criativosIguais>1?"s":""} com este criativo · desde ${c.inicio?new Date(c.inicio+"T12:00").toLocaleDateString(LOCD()):"–"}</div>
     ${c.titulo?`<div><b>${esc(c.titulo)}</b></div>`:""}<div class="tx">${esc(c.texto||"(sem texto)")}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:auto">${v?`<a class="btn sm" href="${esc(v)}" target="_blank" rel="noopener" download>⬇ ${c.videoSalvo?"Baixar vídeo":"Abrir vídeo"}</a>`:""}<button class="btn sm" data-copy="${i}">Copiar copy</button><a class="btn sm" href="https://www.facebook.com/ads/library/?id=${encodeURIComponent(c.id)}" target="_blank" rel="noopener">Anúncio ↗</a></div>
     ${c.videoSalvo?`<div class="note">✔ cópia guardada no seu GitHub</div>`:v?`<div class="note">Link do Facebook (expira em alguns dias)</div>`:""}</div></div>`;}).join("")||`<p class="note">Sem criativos.</p>`;
@@ -471,8 +537,8 @@ function abrirDetalhe(o){
   if(typeof Chart!=="undefined"){
     if(chart)chart.destroy();
     chart=new Chart($("#dChart"),{type:"line",data:{labels:dias.map(d=>d.slice(8,10)+"/"+d.slice(5,7)),datasets:[
-      {label:"Anúncios na oferta",data:dias.map(d=>so[d]??null),borderColor:"#22c55e",backgroundColor:"rgba(34,197,94,.15)",fill:true,tension:.3,spanGaps:true,pointRadius:3},
-      {label:"Anúncios do anunciante",data:dias.map(d=>sa[d]??null),borderColor:"#60a5fa",tension:.3,spanGaps:true,pointRadius:3,borderDash:[5,4]}]},
+      {label:T("Anúncios na oferta"),data:dias.map(d=>so[d]??null),borderColor:"#22c55e",backgroundColor:"rgba(34,197,94,.15)",fill:true,tension:.3,spanGaps:true,pointRadius:3},
+      {label:T("Anúncios do anunciante"),data:dias.map(d=>sa[d]??null),borderColor:"#60a5fa",tension:.3,spanGaps:true,pointRadius:3,borderDash:[5,4]}]},
       options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{labels:{color:"#8d8d9a",boxWidth:12}}},scales:{x:{ticks:{color:"#8d8d9a"},grid:{color:"rgba(255,255,255,.04)"}},y:{beginAtZero:true,ticks:{color:"#8d8d9a",precision:0},grid:{color:"rgba(255,255,255,.06)"}}}}});
   }
 }
@@ -504,7 +570,26 @@ async function detectarLocal(){
     if(j&&j.local){LOCAL=true;$("#btnCfg").style.display="none";
       if(j.versao){$("#versaoApp").textContent="v"+j.versao.atual;if(j.versao.nova)$("#novaVersao").innerHTML=`<a href="${esc(j.versao.link)}" target="_blank" rel="noopener">⬆️ Nova versão v${esc(j.versao.nova)} disponível</a>`;}
       const pill=document.createElement("span");pill.className="pill";pill.textContent="💻 rodando no seu computador";$("#upd").after(pill);
-      if(j.rodando)acompanharLocal(j.palavras);}}catch(e){}
+      if(j.rodando)acompanharLocal(j.palavras);
+      iniciarMoeda();}}catch(e){}
+}
+// Seletor de moeda no topo: Real, Euro ou Dólar. Muda a moeda principal de todo o painel.
+async function iniciarMoeda(){
+  const box=$("#moedaTopo");if(!box)return;
+  let atual="BRL";
+  try{const c=await apiI("/api/trafego/config");atual=(c.analytics&&c.analytics.moeda)||"BRL";}catch(e){}
+  box.hidden=false;
+  box.querySelectorAll("[data-moeda]").forEach(b=>{
+    b.classList.toggle("on",b.dataset.moeda===atual);
+    b.onclick=async()=>{
+      if(b.dataset.moeda===atual)return;
+      try{
+        const r=await fetch("/api/analytics/config",{method:"POST",headers:{"Content-Type":"application/json","X-Minerador":"1"},body:JSON.stringify({moeda:b.dataset.moeda})});
+        if(!r.ok)throw new Error();
+        location.reload();
+      }catch(e){if(typeof toast==="function")toast(T("Não consegui mudar a moeda."));}
+    };
+  });
 }
 async function minerarLocal(kw){
   $("#btnMine").disabled=true;
@@ -598,6 +683,7 @@ const ROTAS={
   "gerenciador/visao":{t:"Gerenciador de anúncios · Visão geral",v:"trafego",sub:"visao"},
   "gerenciador/campanhas":{t:"Gerenciador de anúncios · Campanhas",v:"trafego",sub:"campanhas"},
   "gerenciador/piloto":{t:"Gerenciador de anúncios · Piloto automático",v:"trafego",sub:"piloto"},
+  "gerenciador/ciclo":{t:"Gerenciador de anúncios · Ciclo de criativos",v:"trafego",sub:"ciclo"},
   "gerenciador/criar":{t:"Gerenciador de anúncios · Criar campanha",v:"trafego",sub:"criar"},
   "gerenciador/contas":{t:"Gerenciador de anúncios · Contas de anúncio",v:"trafego",sub:"conexoes"},
   "utmfy/dashboard":{t:"UTMFy · Dashboard",v:"analytics",sub:"dashboard"},
@@ -606,12 +692,21 @@ const ROTAS={
   "utmfy/criativos":{t:"UTMFy · Criativos",v:"analytics",sub:"criativos"},
   "utmfy/produtos":{t:"UTMFy · Produtos e pagamentos",v:"analytics",sub:"produtos"},
   "utmfy/integracoes":{t:"UTMFy · Integrações",v:"analytics",sub:"integracoes"},
+  "avisos":{t:"Avisos no celular (Telegram)",v:"trafego",sub:"avisos"},
 };
+/* menu lateral: um grupo aberto por vez + botão para recolher */
+function abrirGrupo(g){$$v("#menu .grupo").forEach(x=>x.classList.toggle("aberto",x.dataset.g===g));}
+function aplicarMini(v){document.querySelector(".app").classList.toggle("mini",!!v);$("#recolher").textContent="«";$("#recolher").title=v?"Abrir menu":"Recolher menu";LS.set("menuMini",!!v);}
+aplicarMini(LS.get("menuMini",false));
+$("#recolher").onclick=()=>aplicarMini(!document.querySelector(".app").classList.contains("mini"));
 let rotaAtual="";
 function marcarMenu(rota,empilhar){
   rotaAtual=rota;
   $$v("#menu a").forEach(a=>a.classList.toggle("on",a.dataset.r===rota));
-  const r=ROTAS[rota];if(r)$("#ptitulo").textContent=r.t;
+  const g=rota.includes("/")?rota.split("/")[0]:"";
+  $$v("#menu .grupo").forEach(x=>x.classList.toggle("ativo",x.dataset.g===g));
+  if(g)abrirGrupo(g);
+  const r=ROTAS[rota];if(r){$("#ptitulo").textContent=T(r.t);document.title=T(r.t)+" · Paid Traffic Agent";}
   if(location.hash!=="#"+rota){if(empilhar)history.pushState(null,"","#"+rota);else history.replaceState(null,"","#"+rota);}
   LS.set("rota",rota);
 }
@@ -626,18 +721,23 @@ function ir(rota,daHistoria){
   $("#side").classList.remove("open");$("#sideveu").classList.remove("on");
   window.scrollTo(0,0);
 }
-$("#menu").onclick=e=>{const a=e.target.closest("[data-r]");if(a)ir(a.dataset.r);};
+$("#menu").onclick=e=>{
+  const gb=e.target.closest(".gtit");
+  if(gb){const gr=gb.closest(".grupo");if(document.querySelector(".app").classList.contains("mini")){aplicarMini(false);abrirGrupo(gr.dataset.g);return;}
+    gr.classList.contains("aberto")?gr.classList.remove("aberto"):abrirGrupo(gr.dataset.g);return;}
+  const a=e.target.closest("[data-r]");if(a)ir(a.dataset.r);};
 $("#burger").onclick=()=>{$("#side").classList.add("open");$("#sideveu").classList.add("on");};
 $("#sideveu").onclick=()=>{$("#side").classList.remove("open");$("#sideveu").classList.remove("on");};
 addEventListener("popstate",()=>{const h=location.hash.slice(1)||"inicio";if(h!==rotaAtual&&ROTAS[h])ir(h,true);});
 addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(h&&h!==rotaAtual&&ROTAS[h])ir(h,true);});
 $("#dModelar").onclick=()=>{if(!ofertaAberta||!window.MO_T)return;closeM("mDet");window.MO_T.adicionarReferencia(ofertaAberta);ir("clonador/criativos");};
-window.MO={toast,ofertas:()=>OFERTAS,ir:(r)=>ir(r),sincronizarMenu:(r)=>{if(ROTAS[r])marcarMenu(r);},mostrar:(v)=>ir(v==="trafego"?"gerenciador/visao":v==="analytics"?"utmfy/dashboard":"clonador/minerar")};
+window.MO={T,LOCALE,toast,ofertas:()=>OFERTAS,ir:(r)=>ir(r),sincronizarMenu:(r)=>{if(ROTAS[r])marcarMenu(r);},mostrar:(v)=>ir(v==="trafego"?"gerenciador/visao":v==="analytics"?"utmfy/dashboard":"clonador/minerar")};
 
 /* ---------- Início: resumo das 3 ferramentas ---------- */
 let chIni1=null,chIni2=null;
-const brlI=n=>(n===null||n===undefined||isNaN(n))?"–":"R$ "+Number(n).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
-const pctI=(n,s)=>(n===null||n===undefined||isNaN(n))?"–":(s&&n>0?"+":"")+n.toFixed(1).replace(".",",")+"%";
+const SIMB={BRL:"R$",USD:"US$",EUR:"€",GBP:"£"};
+const brlI=n=>(n===null||n===undefined||isNaN(n))?"–":(SIMB[window.MO_MOEDA]||"R$")+" "+Number(n).toLocaleString(LOCALE(),{minimumFractionDigits:2,maximumFractionDigits:2});
+const pctI=(n,s)=>(n===null||n===undefined||isNaN(n))?"–":(s&&n>0?"+":"")+n.toFixed(1).replace(".",LOCALE()==="en-US"?".":",")+"%";
 const corI=n=>n>0?"pos":n<0?"neg":"";
 async function apiI(u){const r=await fetch(u,{headers:{"X-Minerador":"1"},cache:"no-store"});if(!r.ok)throw new Error("erro");return r.json();}
 async function renderInicio(){
@@ -645,7 +745,7 @@ async function renderInicio(){
   const escaladas=OFERTAS.filter(o=>o.status==="escalada");
   const blocoClonador=`<div class="ibox"><h3>🧬 Clonador</h3>
     <div class="minilista"><div><span>Ofertas mineradas</span><b>${nf.format(OFERTAS.length)}</b></div><div><span>Escaladas</span><b class="pos">${nf.format(escaladas.length)}</b></div><div><span>Estruturadas</span><b>${nf.format(OFERTAS.filter(o=>o.estrutura&&o.estrutura.estruturada).length)}</b></div></div>
-    <div style="margin-top:10px;font-size:13px">${escaladas.sort((a,b)=>(b.pontuacao||0)-(a.pontuacao||0)).slice(0,3).map(o=>`<div style="margin-top:6px">🔥 <b>${esc(o.anunciante)}</b> <span class="note">${esc(o.titulo||o.dominio||"")} · ${o.anunciosOferta} anúncios</span></div>`).join("")||`<span class="note">Minere um tema para ver as ofertas escaladas.</span>`}</div>
+    <div style="margin-top:10px;font-size:13px">${escaladas.sort((a,b)=>(b.pontuacao||0)-(a.pontuacao||0)).slice(0,3).map(o=>`<div style="margin-top:6px">🔥 <b>${esc(o.anunciante)}</b> <span class="note"><span class="notr">${esc(o.titulo||o.dominio||"")}</span> · <span>${o.anunciosOferta} anúncios</span></span></div>`).join("")||`<span class="note">Minere um tema para ver as ofertas escaladas.</span>`}</div>
     <div style="display:flex;gap:8px;margin-top:12px"><input id="iniKw" placeholder="minerar um tema…"><button class="btn sm primary" id="iniMinerar">⛏️</button></div></div>`;
   if(!LOCAL){
     el.innerHTML=`<div class="hello"><h1>Bem-vindo ao <span>Paid Traffic Agent</span> 🐉</h1></div><div class="ini-3">${blocoClonador}<div class="ibox" style="grid-column:span 2"><h3>💻 Gerenciador de anúncios e UTMFy</h3><p class="note">Essas duas partes rodam no seu computador porque usam as suas contas de anúncio e as suas vendas. Abra pelo <b>iniciar-windows.bat</b> ou <b>iniciar-mac.command</b> e use em <b>http://localhost:3000</b>.</p></div></div>`;
@@ -654,24 +754,26 @@ async function renderInicio(){
   el.innerHTML=`<div class="ibox"><div class="spin" style="display:inline-block"></div> Carregando o resumo…</div>`;
   let hoje=null,mes=null,est={},cfg={status:{},regras:{}},integ={};
   try{[hoje,mes,est,cfg,integ]=await Promise.all([apiI("/api/analytics/relatorio?periodo=hoje"),apiI("/api/analytics/relatorio?periodo=30d"),apiI("/api/trafego/estado"),apiI("/api/trafego/config"),apiI("/api/analytics/integracoes")]);}catch(e){}
+  if(hoje&&hoje.moeda)window.MO_MOEDA=hoje.moeda;
   const t=hoje?hoje.total:{};
   const pend=(est.pendentes||[]).length;
   const passos=[
-    [!!(cfg.status&&(cfg.status.meta||cfg.status.google)),"Conectar a conta de anúncios (Meta/Google)","gerenciador/contas"],
+    [!!(cfg.status&&(cfg.status.meta||cfg.status.google||cfg.status.tiktok||cfg.status.kwai)),"Conectar a conta de anúncios (Meta, Google, TikTok ou Kwai)","gerenciador/contas"],
     [!!(integ.status&&integ.status.worker),"Ligar o receptor de vendas 24h (Cloudflare grátis)","utmfy/integracoes"],
-    [!!(integ.totalVendas),"Colar os webhooks do checkout (Hotmart, Kiwify, Cakto…)","utmfy/integracoes"],
+    [!!(integ.totalVendas),"Colar os webhooks do checkout ou gateway (Hotmart, Kiwify, Stripe, PayPal…)","utmfy/integracoes"],
+    [!!(cfg.status&&cfg.status.telegram),"Receber os avisos no celular (Telegram)","avisos"],
     [cfg.regras&&cfg.regras.fonteConversoes==="vendas","Deixar o gerenciador decidir pelas vendas reais","gerenciador/piloto"],
   ];
   const faltam=passos.filter(p=>!p[0]).length;
   const camp=hoje&&hoje.criativos.melhores.find(a=>a.vendas>0&&a.lucro>0);
   el.innerHTML=`
-    <div class="hello"><h1>Bem-vindo ao <span>Paid Traffic Agent</span> 🐉</h1><div class="spacer"></div><span class="note">Hoje · ${new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"})}</span><button class="btn sm primary" id="iniSync">↻ Atualizar vendas e gastos</button></div>
+    <div class="hello"><h1>Bem-vindo ao <span>Paid Traffic Agent</span> 🐉</h1><div class="spacer"></div><span class="note">${T("Hoje")} · ${new Date().toLocaleDateString(LOCD(),{weekday:"long",day:"2-digit",month:"long"})}</span><button class="btn sm primary" id="iniSync">↻ Atualizar vendas e gastos</button></div>
     <div class="ini-k">
       <div class="ik big"><div class="l">Faturamento hoje</div><div class="v">${brlI(t.liquido)}</div><div class="s">${nf.format(t.vendas||0)} venda(s)</div></div>
       <div class="ik"><div class="l">Gasto hoje</div><div class="v">${brlI(t.gasto)}</div></div>
       <div class="ik"><div class="l">Lucro hoje</div><div class="v ${corI(t.lucro)}">${brlI(t.lucro)}</div></div>
       <div class="ik"><div class="l">ROI hoje</div><div class="v ${corI(t.roi)}">${pctI(t.roi,true)}</div></div>
-      <div class="ik"><div class="l">ROAS hoje</div><div class="v">${t.roas?t.roas.toFixed(2).replace(".",",")+"x":"–"}</div></div>
+      <div class="ik"><div class="l">ROAS hoje</div><div class="v">${t.roas?t.roas.toFixed(2).replace(".",LOCALE()==="en-US"?".":",")+"x":"–"}</div></div>
       <div class="ik"><div class="l">Lucro 30 dias</div><div class="v ${corI(mes&&mes.total.lucro)}">${brlI(mes&&mes.total.lucro)}</div><div class="s">ROI ${pctI(mes&&mes.total.roi,true)}</div></div>
     </div>
     <div class="ini-g">
@@ -680,11 +782,11 @@ async function renderInicio(){
     </div>
     <div class="ini-3">
       <div class="ibox"><h3>📣 Gerenciador de anúncios</h3>
-        <div class="minilista"><div><span>Modo do piloto</span><b>${esc({desligado:"Desligado",sugerir:"Sugerir",automatico:"Automático"}[cfg.regras&&cfg.regras.modo]||"–")}</b></div><div><span>Decide por</span><b>${cfg.regras&&cfg.regras.fonteConversoes==="vendas"?'<span class="pos">vendas reais</span>':"pixel"}</b></div><div><span>Sugestões esperando você</span><b class="${pend?"pos":""}">${pend}</b></div><div><span>Última análise</span><b>${est.atualizadoEm?new Date(est.atualizadoEm).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"–"}</b></div></div>
-        ${camp?`<div style="margin-top:10px;font-size:13px">🏆 Campeão de hoje: <b>${esc(camp.nome)}</b> <span class="note">· ${camp.vendas} venda(s) · ROI <span class="pos">${pctI(camp.roi,true)}</span></span></div>`:""}
+        <div class="minilista"><div><span>Modo do piloto</span><b>${esc({desligado:"Desligado",sugerir:"Sugerir",automatico:"Automático"}[cfg.regras&&cfg.regras.modo]||"–")}</b></div><div><span>Decide por</span><b>${cfg.regras&&cfg.regras.fonteConversoes==="vendas"?'<span class="pos">vendas reais</span>':"pixel"}</b></div><div><span>Sugestões esperando você</span><b class="${pend?"pos":""}">${pend}</b></div><div><span>Última análise</span><b>${est.atualizadoEm?new Date(est.atualizadoEm).toLocaleString(LOCD(),{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"–"}</b></div></div>
+        ${camp?`<div style="margin-top:10px;font-size:13px">🏆 Campeão de hoje: <b class="notr">${esc(camp.nome)}</b> <span class="note">· ${camp.vendas} venda(s) · ROI <span class="pos">${pctI(camp.roi,true)}</span></span></div>`:""}
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><span class="lnk" data-ir2="gerenciador/visao">Ver sugestões →</span><span class="lnk" data-ir2="gerenciador/campanhas">Campanhas →</span></div></div>
       ${blocoClonador}
-      <div class="ibox"><h3>💰 UTMFy · últimas vendas</h3><div class="minilista">${(hoje&&mes?mes.ultimas.slice(0,6):[]).map(v=>`<div><span>${new Date(v.quando).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} · ${esc(v.produto)}</span><b class="${v.status==="aprovada"?"pos":v.status==="reembolsada"||v.status==="chargeback"?"neg":""}">${brlI(v.valor)}</b></div>`).join("")||`<span class="note">Nenhuma venda ainda.</span>`}</div>
+      <div class="ibox"><h3>💰 UTMFy · últimas vendas</h3><div class="minilista">${(hoje&&mes?mes.ultimas.slice(0,6):[]).map(v=>`<div><span>${new Date(v.quando).toLocaleString(LOCD(),{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} · <span class="notr">${esc(v.produto)}</span></span><b class="${v.status==="aprovada"?"pos":v.status==="reembolsada"||v.status==="chargeback"?"neg":""}">${brlI(v.valor)}</b></div>`).join("")||`<span class="note">Nenhuma venda ainda.</span>`}</div>
         <div style="margin-top:12px"><span class="lnk" data-ir2="utmfy/vendas">Todas as vendas →</span></div></div>
     </div>
     ${faltam?`<div class="ibox"><h3>🚀 Deixe tudo conectado (${passos.length-faltam}/${passos.length})</h3><div class="passos">${passos.map(([ok,txt,r])=>`<div class="passo ${ok?"ok":""}">${ok?"✅":"⬜"} <span style="flex:1">${txt}</span>${ok?"":`<span class="lnk" data-ir2="${r}">fazer agora →</span>`}</div>`).join("")}</div></div>`:""}`;
@@ -693,13 +795,13 @@ async function renderInicio(){
     const dias=mes.porDia,lab=dias.map(d=>d.dia.slice(8,10)+"/"+d.dia.slice(5,7));
     if(chIni1)chIni1.destroy();if(chIni2)chIni2.destroy();
     const eixo={ticks:{color:"#8fa595"},grid:{color:"rgba(255,255,255,.05)"}};
-    chIni1=new Chart($("#iniRoi"),{type:"bar",data:{labels:lab,datasets:[{label:"ROI do dia",data:dias.map(d=>d.roi===null?null:+d.roi.toFixed(1)),backgroundColor:dias.map(d=>(d.roi||0)>=0?"rgba(34,197,94,.75)":"rgba(240,82,82,.7)"),borderRadius:5}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`ROI: ${pctI(c.parsed.y,true)} · lucro ${brlI(dias[c.dataIndex].lucro)}`}}},scales:{x:eixo,y:{...eixo,ticks:{color:"#8fa595",callback:v=>v+"%"}}}}});
+    chIni1=new Chart($("#iniRoi"),{type:"bar",data:{labels:lab,datasets:[{label:T("ROI do dia"),data:dias.map(d=>d.roi===null?null:+d.roi.toFixed(1)),backgroundColor:dias.map(d=>(d.roi||0)>=0?"rgba(34,197,94,.75)":"rgba(240,82,82,.7)"),borderRadius:5}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`ROI: ${pctI(c.parsed.y,true)} · ${T("lucro")} ${brlI(dias[c.dataIndex].lucro)}`}}},scales:{x:eixo,y:{...eixo,ticks:{color:"#8fa595",callback:v=>v+"%"}}}}});
     chIni2=new Chart($("#iniFat"),{data:{labels:lab,datasets:[
-      {type:"bar",label:"Faturamento",data:dias.map(d=>+d.liquido.toFixed(2)),backgroundColor:"rgba(34,197,94,.55)",borderRadius:5,order:2},
-      {type:"bar",label:"Gasto",data:dias.map(d=>+d.gasto.toFixed(2)),backgroundColor:"rgba(148,163,150,.35)",borderRadius:5,order:3},
-      {type:"line",label:"Lucro",data:dias.map(d=>+d.lucro.toFixed(2)),borderColor:"#86efac",backgroundColor:"#86efac",tension:.3,pointRadius:2,order:1}]},
-      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{labels:{color:"#8fa595",boxWidth:12}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${brlI(c.parsed.y)}`}}},scales:{x:eixo,y:{...eixo,ticks:{color:"#8fa595",callback:v=>"R$ "+Number(v).toLocaleString("pt-BR")}}}}});
+      {type:"bar",label:T("Faturamento"),data:dias.map(d=>+d.liquido.toFixed(2)),backgroundColor:"rgba(34,197,94,.55)",borderRadius:5,order:2},
+      {type:"bar",label:T("Gasto"),data:dias.map(d=>+d.gasto.toFixed(2)),backgroundColor:"rgba(148,163,150,.35)",borderRadius:5,order:3},
+      {type:"line",label:T("Lucro"),data:dias.map(d=>+d.lucro.toFixed(2)),borderColor:"#86efac",backgroundColor:"#86efac",tension:.3,pointRadius:2,order:1}]},
+      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{labels:{color:"#8fa595",boxWidth:12}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${brlI(c.parsed.y)}`}}},scales:{x:eixo,y:{...eixo,ticks:{color:"#8fa595",callback:v=>(SIMB[window.MO_MOEDA]||"R$")+" "+Number(v).toLocaleString(LOCALE())}}}}});
   }
 }
 function ligarIni(){

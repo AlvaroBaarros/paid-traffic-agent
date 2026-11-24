@@ -4,10 +4,17 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const brl = (n) => (n === null || n === undefined || isNaN(n) ? "–" : "R$ " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-  const num = (n) => (n === null || n === undefined ? "–" : Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 1 }));
-  const pct = (n, sinal) => (n === null || n === undefined || isNaN(n) ? "–" : (sinal && n > 0 ? "+" : "") + n.toFixed(1).replace(".", ",") + "%");
-  const x2 = (n) => (n === null || n === undefined ? "–" : n.toFixed(2).replace(".", ",") + "x");
+  const SIMB = { BRL: "R$", USD: "US$", EUR: "€", GBP: "£" };
+  const LOC = () => (window.I18N && window.I18N.lang === "en" ? "en-US" : "pt-BR");
+  const LOCD = () => (window.I18N && window.I18N.lang === "en" ? "en-GB" : "pt-BR");
+  const DEC = () => (window.I18N && window.I18N.lang === "en" ? "." : ",");
+  const T = (x) => (window.I18N && window.I18N.t ? window.I18N.t(x) : x);
+  const brl = (n, moeda) => (n === null || n === undefined || isNaN(n) ? "–" : (SIMB[moeda || window.MO_MOEDA] || moeda || "R$") + " " + Number(n).toLocaleString(LOC(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  const NOME_P = { meta: "Meta", google: "Google", tiktok: "TikTok", kwai: "Kwai" };
+  const optPlats = () => `<option value="">Todas as plataformas</option>` + Object.entries(NOME_P).map(([k, n]) => `<option value="${k}">Só ${n}</option>`).join("");
+  const num = (n) => (n === null || n === undefined ? "–" : Number(n).toLocaleString(LOCD(), { maximumFractionDigits: 1 }));
+  const pct = (n, sinal) => (n === null || n === undefined || isNaN(n) ? "–" : (sinal && n > 0 ? "+" : "") + n.toFixed(1).replace(".", DEC()) + "%");
+  const x2 = (n) => (n === null || n === undefined ? "–" : n.toFixed(2).replace(".", DEC()) + "x");
   const cor = (n) => (n === null || n === undefined ? "" : n > 0 ? "pos" : n < 0 ? "neg" : "");
   const toast = (m, e) => (window.MO && window.MO.toast ? window.MO.toast(m, e) : alert(m));
   const LS = { get(k, d) { try { const v = localStorage.getItem("moa_" + k); return v === null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem("moa_" + k, JSON.stringify(v)); } catch {} } };
@@ -38,14 +45,17 @@
     .anav button.on,.chips button.on{color:#052e12;background:var(--accent);border-color:var(--accent)}
     .chips{display:flex;gap:6px;flex-wrap:wrap}
     .afil{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:14px}
-    .afil select,.afil input[type=date]{width:auto;padding:7px 10px}
+    .afil select,.afil input[type=date]{width:auto;padding:7px 10px}.afil select{padding-right:30px}
     .hero{display:grid;grid-template-columns:1.4fr repeat(5,1fr);gap:10px;margin-bottom:10px}
     .hk{background:linear-gradient(160deg,rgba(34,197,94,.10),rgba(34,197,94,.02) 70%),var(--panel);border:1px solid rgba(34,197,94,.22);border-radius:16px;padding:14px 16px}
     .hk .l{font-size:12px;color:var(--muted);font-weight:500}
     .hk .v{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:2px}
     .hk.big .v{font-size:34px;color:#4ade80}
     .hk .s{font-size:11.5px;color:var(--dim);margin-top:2px}
-    .mini{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:14px}
+    .mini{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;margin-bottom:14px}
+    .reg{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+    .reg button{background:var(--panel2);border:1px solid var(--line2);color:var(--muted);padding:6px 12px;border-radius:999px;font-weight:600;font-size:12.5px}
+    .reg button.on{background:rgba(34,197,94,.15);border-color:var(--accent);color:#4ade80}
     .mk{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
     .mk .l{font-size:11px;color:var(--muted)}.mk .v{font-size:17px;font-weight:800}.mk .s{font-size:11px;color:var(--dim)}
     .pos{color:#4ade80}.neg{color:var(--down)}
@@ -112,7 +122,7 @@
   // ---------- PAINEL ----------
   async function carregar() {
     const q = new URLSearchParams({ periodo: S.f.periodo, de: S.f.de, ate: S.f.ate, plataforma: S.f.plataforma, produto: S.f.produto, checkout: S.f.checkout, testes: S.f.testes ? "1" : "" });
-    try { [S.r, S.cfgT] = await Promise.all([api("/api/analytics/relatorio?" + q), api("/api/trafego/config")]); S.rCarregadoHa = Date.now(); }
+    try { [S.r, S.cfgT] = await Promise.all([api("/api/analytics/relatorio?" + q), api("/api/trafego/config")]); S.rCarregadoHa = Date.now(); if (S.r?.moeda) window.MO_MOEDA = S.r.moeda; }
     catch (e) { toast(e.message, true); }
   }
   async function vPainel() {
@@ -126,7 +136,7 @@
         <div class="chips" id="aPer">${PERIODOS.map(([k, n]) => `<button data-p="${k}" class="${S.f.periodo === k ? "on" : ""}">${n}</button>`).join("")}</div>
         <span id="aCustom" style="display:${S.f.periodo === "custom" ? "flex" : "none"};gap:6px;align-items:center"><input type="date" id="aDe" value="${esc(S.f.de || r.de)}"> até <input type="date" id="aAte" value="${esc(S.f.ate || r.ate)}"></span>
         <div class="spacer"></div>
-        <select id="aPlat"><option value="">Meta + Google</option><option value="meta">Só Meta</option><option value="google">Só Google</option></select>
+        <select id="aPlat">${optPlats()}</select>
         ${comProduto ? `<select id="aProd"><option value="">Todos os produtos</option>${r.opcoes.produtos.map((p) => `<option>${esc(p)}</option>`).join("")}</select>
         <select id="aChk"><option value="">Todos os checkouts</option>${r.opcoes.checkouts.map((p) => `<option>${esc(p)}</option>`).join("")}</select>` : ""}
         ${r.opcoes.temTestes ? `<label class="chk" style="padding:0"><input type="checkbox" id="aTst" ${S.f.testes ? "checked" : ""}> vendas de teste</label>` : ""}
@@ -154,6 +164,7 @@
         <div class="mk"><div class="l">Pendentes</div><div class="v">${num(t.pendentes)}</div><div class="s">${brl(t.valorPendente)}</div></div>
         <div class="mk"><div class="l">Reembolsos</div><div class="v ${t.reembolsos ? "neg" : ""}">${num(t.reembolsos)}</div><div class="s">${brl(t.valorReembolsos)}</div></div>
         <div class="mk"><div class="l">Chargebacks</div><div class="v ${t.chargebacks ? "neg" : ""}">${num(t.chargebacks)}</div><div class="s">${brl(t.valorChargebacks)}</div></div>
+        <div class="mk"><div class="l">Taxa de reembolso</div><div class="v ${t.taxaReembolso > 10 ? "neg" : ""}">${pct(t.taxaReembolso)}</div><div class="s">reembolsos + chargebacks</div></div>
         <div class="mk"><div class="l">Impostos + custos</div><div class="v">${brl((t.impostos || 0) + (t.custos || 0))}</div></div>
       </div>`;
   }
@@ -173,8 +184,8 @@
   function blocoRanking(r) {
     const lista = r.criativos.todos || [];
     if (!lista.length) return `<div class="acard"><div class="note">Sem anúncios com gasto ou vendas neste período.</div></div>`;
-    return `<div class="acard"><h3>🏆 Ranking de criativos <span class="note">(${lista.length})</span></h3><div style="overflow:auto"><table class="at"><thead><tr><th>#</th><th style="text-align:left">Criativo</th><th style="text-align:left">Campanha</th><th>Gasto</th><th>Vendas</th><th>Faturamento</th><th>Lucro</th><th>ROI</th><th>CTR</th><th></th></tr></thead><tbody>
-      ${lista.map((a, i) => `<tr data-plat="${esc(a.plataforma)}" data-id="${esc(a.id)}" data-nivel="anuncio"><td>${i + 1}</td><td style="text-align:left"><span class="an" title="${esc(a.nome)}">${a.status ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:${a.status === "ativo" ? "var(--up)" : "var(--dim)"}"></span>` : ""}${esc(a.nome)}</span></td><td style="text-align:left"><span class="an" style="max-width:200px">${esc(a.campanha)}</span></td><td>${brl(a.gasto)}</td><td>${num(a.vendas)}</td><td>${brl(a.liquido)}</td><td class="${cor(a.lucro)}">${brl(a.lucro)}</td><td class="${cor(a.roi)}">${pct(a.roi, true)}</td><td>${pct(a.ctr)}</td><td style="white-space:nowrap">${a.vendas > 0 && a.lucro > 0 ? `<button class="ib" data-var-tab="1" title="Gerar variações">🎯</button> ` : ""}${acoes(a)}</td></tr>`).join("")}
+    return `<div class="acard"><h3>🏆 Ranking de criativos <span class="note">(${lista.length})</span></h3><div style="overflow:auto"><table class="at"><thead><tr><th>#</th><th style="text-align:left">Criativo</th><th style="text-align:left">Campanha</th><th>Gasto</th><th>Vendas</th><th>Faturamento</th><th>Lucro</th><th>ROI</th><th>Reemb.</th><th>CTR</th><th></th></tr></thead><tbody>
+      ${lista.map((a, i) => `<tr data-plat="${esc(a.plataforma)}" data-id="${esc(a.id)}" data-nivel="anuncio"><td>${i + 1}</td><td style="text-align:left"><span class="an" title="${esc(a.nome)}">${a.status ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:${a.status === "ativo" ? "var(--up)" : "var(--dim)"}"></span>` : ""}${esc(a.nome)}</span></td><td style="text-align:left"><span class="an" style="max-width:200px">${esc(a.campanha)}</span></td><td>${brl(a.gasto)}</td><td>${num(a.vendas)}</td><td>${brl(a.liquido)}</td><td class="${cor(a.lucro)}">${brl(a.lucro)}</td><td class="${cor(a.roi)}">${pct(a.roi, true)}</td><td class="${a.taxaReembolso > 15 ? "neg" : ""}" title="${num(a.reembolsos)} reembolso(s) · ${num(a.chargebacks)} chargeback(s)">${pct(a.taxaReembolso)}</td><td>${pct(a.ctr)}</td><td style="white-space:nowrap">${a.vendas > 0 && a.lucro > 0 ? `<button class="ib" data-var-tab="1" title="Gerar variações">🎯</button> ` : ""}${acoes(a)}</td></tr>`).join("")}
       </tbody></table></div></div>`;
   }
   function render() {
@@ -222,8 +233,8 @@
         <input id="vQ" placeholder="🔎 nome, e-mail, transação, campanha…" value="${esc(SV.q)}" style="max-width:300px"><button class="btn sm" id="vCsv">📋 Copiar CSV</button></div>
       <div class="mini" style="grid-template-columns:repeat(4,1fr)"><div class="mk"><div class="l">Vendas encontradas</div><div class="v">${num(d.total)}</div></div><div class="mk"><div class="l">Aprovado (líquido)</div><div class="v pos">${brl(d.resumo.aprovadas)}</div></div><div class="mk"><div class="l">Pendentes</div><div class="v">${num(d.resumo.pendentes)}</div></div><div class="mk"><div class="l">Reembolsado</div><div class="v ${d.resumo.reembolsadas ? "neg" : ""}">${brl(d.resumo.reembolsadas)}</div></div></div>
       <div class="acard"><div style="overflow:auto"><table class="at" id="vTab"><thead><tr><th>Data</th><th style="text-align:left">Cliente</th><th style="text-align:left">Produto</th><th>Valor</th><th>Líquido</th><th>Status</th><th>Pagamento</th><th style="text-align:left">Campanha › anúncio</th></tr></thead><tbody>
-      ${d.itens.map((v) => `<tr data-v="${esc(v.id)}" style="cursor:pointer"><td>${new Date(v.quando).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}</td><td style="text-align:left"><span class="an" style="max-width:200px" title="${esc(v.email)}">${esc(v.nome || v.email || "–")}</span></td><td style="text-align:left">${esc(v.produto)} <span class="note">${esc(v.checkout)}</span>${v.teste ? ` <span class="chip">teste</span>` : ""}</td><td>${brl(v.valor)}</td><td>${brl(v.liquido)}</td><td><span class="st2 ${v.status}">${esc(v.status)}</span></td><td>${esc(met[v.metodo] || v.metodo || "–")}${v.parcelas > 1 ? ` ${v.parcelas}x` : ""}</td><td style="text-align:left"><span class="an" style="max-width:300px" title="${esc([v.campanha, v.conjunto, v.anuncio].filter(Boolean).join(" › "))}">${esc(v.anuncio ? v.campanha + " › " + v.anuncio : v.campanha || v.origem)}</span></td></tr>
-        ${SV.aberta === v.id ? `<tr><td colspan="8" style="text-align:left;background:rgba(34,197,94,.04);white-space:normal"><div class="note">Transação <b>${esc(v.transacao)}</b> · ${esc(v.email)}<br>UTMs: ${Object.entries(v.utm).map(([k, x]) => `<code>utm_${esc(k)}=${esc(x)}</code>`).join(" ") || "nenhuma"}<br>Histórico: ${v.historico.map((h) => `${esc(h.status)} (${new Date(h.em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })})`).join(" → ")}</div></td></tr>` : ""}`).join("") || `<tr><td colspan="8" class="note" style="text-align:left;padding:14px">Nenhuma venda com esses filtros.</td></tr>`}
+      ${d.itens.map((v) => `<tr data-v="${esc(v.id)}" style="cursor:pointer"><td>${new Date(v.quando).toLocaleString(LOCD(), { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}</td><td style="text-align:left"><span class="an" style="max-width:200px" title="${esc(v.email)}">${esc(v.nome || v.email || "–")}</span></td><td style="text-align:left">${esc(v.produto)} <span class="note">${esc(v.checkout)}</span>${v.teste ? ` <span class="chip">teste</span>` : ""}</td><td>${brl(v.valor, v.moeda)}</td><td>${brl(v.liquido, v.moeda)}</td><td><span class="st2 ${v.status}">${esc(v.status)}</span></td><td>${esc(met[v.metodo] || v.metodo || "–")}${v.parcelas > 1 ? ` ${v.parcelas}x` : ""}</td><td style="text-align:left"><span class="an" style="max-width:300px" title="${esc([v.campanha, v.conjunto, v.anuncio].filter(Boolean).join(" › "))}">${esc(v.anuncio ? v.campanha + " › " + v.anuncio : v.campanha || v.origem)}</span></td></tr>
+        ${SV.aberta === v.id ? `<tr><td colspan="8" style="text-align:left;background:rgba(34,197,94,.04);white-space:normal"><div class="note">Transação <b>${esc(v.transacao)}</b> · ${esc(v.email)}<br>UTMs: ${Object.entries(v.utm).map(([k, x]) => `<code>utm_${esc(k)}=${esc(x)}</code>`).join(" ") || "nenhuma"}<br><span>Histórico:</span> ${v.historico.map((h) => `<span>${esc(T(h.status))}</span> <span class="notr">(${new Date(h.em).toLocaleString(LOCD(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })})</span>`).join(" → ")}</div></td></tr>` : ""}`).join("") || `<tr><td colspan="8" class="note" style="text-align:left;padding:14px">Nenhuma venda com esses filtros.</td></tr>`}
       </tbody></table></div>
       ${d.paginas > 1 ? `<div style="display:flex;gap:8px;justify-content:center;margin-top:12px;align-items:center"><button class="btn sm" id="vAnt" ${d.pagina <= 1 ? "disabled" : ""}>← Anterior</button><span class="note">página ${d.pagina} de ${d.paginas}</span><button class="btn sm" id="vProx" ${d.pagina >= d.paginas ? "disabled" : ""}>Próxima →</button></div>` : ""}</div>
       <p class="note">🐉 UTMFy do Debian · clique numa venda para ver as UTMs e o histórico de status.</p>`);
@@ -251,7 +262,7 @@
   const salvarF = () => LS.set("filtros", S.f);
   function statusLinha(r) {
     const s = r.status || {};
-    const quando = (iso) => (iso ? new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "nunca");
+    const quando = (iso) => (iso ? new Date(iso).toLocaleString(LOCD(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "nunca");
     const partes = [
       s.worker ? `<span class="ok3">●</span> Receptor de vendas conectado · última busca ${quando(s.ultimaSync)}` : `<span class="bad3">●</span> Receptor de vendas não configurado`,
       `Gastos atualizados ${quando(s.ultimaSyncGastos)}`,
@@ -260,7 +271,7 @@
     return `<div class="note" style="margin:-4px 0 12px">${partes.join(" · ")}${erros.length ? `<div class="bad3" style="margin-top:4px">⚠️ ${erros.map(esc).join(" · ")}</div>` : ""}</div>`;
   }
   function linhaMetricas(m) {
-    return `<td>${brl(m.gasto)}</td><td>${num(m.vendas)}</td><td>${brl(m.liquido)}</td><td class="${cor(m.lucro)}">${brl(m.lucro)}</td><td class="${cor(m.roi)}">${pct(m.roi, true)}</td><td>${x2(m.roas)}</td><td>${brl(m.cpa)}</td>`;
+    return `<td>${brl(m.gasto)}</td><td>${num(m.vendas)}</td><td>${brl(m.liquido)}</td><td class="${cor(m.lucro)}">${brl(m.lucro)}</td><td class="${cor(m.roi)}">${pct(m.roi, true)}</td><td>${x2(m.roas)}</td><td>${brl(m.cpa)}</td><td class="${m.taxaReembolso > 15 ? "neg" : ""}" title="${num(m.reembolsos)} reembolso(s) · ${num(m.chargebacks)} chargeback(s)">${pct(m.taxaReembolso)}</td>`;
   }
   const ordenadores = { lucro: (a, b) => b.lucro - a.lucro, roi: (a, b) => (b.roi ?? -1e9) - (a.roi ?? -1e9), liquido: (a, b) => b.liquido - a.liquido, gasto: (a, b) => b.gasto - a.gasto, vendas: (a, b) => b.vendas - a.vendas, pior: (a, b) => a.lucro - b.lucro };
   function acoes(item, plataforma) {
@@ -272,7 +283,7 @@
     const linha = (it, n, k, temFilhos) => {
       const aberto = S.abertos.has(k);
       return `<tr class="n${n}" data-k="${esc(k)}" data-plat="${esc(it.plataforma)}" data-id="${esc(it.id)}" data-nivel="${esc(it.nivel)}">
-        <td>${temFilhos ? `<span class="ex" data-ex="${esc(k)}">${aberto ? "▾" : "▸"}</span>` : `<span class="ex"></span>`}${it.status ? `<span class="dot ${it.status}" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:${it.status === "ativo" ? "var(--up)" : "var(--dim)"}"></span>` : ""}<span class="an" title="${esc(it.nome)}">${esc(it.nome)}</span>${n === 0 && it.plataforma ? ` <span class="chip">${it.plataforma === "meta" ? "Meta" : "Google"}</span>` : ""}</td>
+        <td>${temFilhos ? `<span class="ex" data-ex="${esc(k)}">${aberto ? "▾" : "▸"}</span>` : `<span class="ex"></span>`}${it.status ? `<span class="dot ${it.status}" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:${it.status === "ativo" ? "var(--up)" : "var(--dim)"}"></span>` : ""}<span class="an" title="${esc(it.nome)}">${esc(it.nome)}</span>${n === 0 && it.plataforma ? ` <span class="chip">${NOME_P[it.plataforma] || it.plataforma}</span>` : ""}</td>
         ${linhaMetricas(it)}<td>${acoes(it)}</td></tr>`;
     };
     let html = "";
@@ -288,12 +299,12 @@
       }
     }
     for (const sa of r.semAtribuicao) html += `<tr class="sa"><td><span class="ex"></span>🔎 ${esc(sa.nome)}</td>${linhaMetricas(sa)}<td></td></tr>`;
-    return `<table class="at"><thead><tr><th>Campanha / conjunto / anúncio</th><th>Gasto</th><th>Vendas</th><th>Faturamento</th><th>Lucro</th><th>ROI</th><th>ROAS</th><th>CPA</th><th></th></tr></thead><tbody>${html || `<tr><td colspan="9" class="note" style="text-align:left;padding:14px">Sem campanhas com gasto ou vendas neste período.</td></tr>`}</tbody></table>`;
+    return `<table class="at"><thead><tr><th>Campanha / conjunto / anúncio</th><th>Gasto</th><th>Vendas</th><th>Faturamento</th><th>Lucro</th><th>ROI</th><th>ROAS</th><th>CPA</th><th title="reembolsos + chargebacks">Reemb.</th><th></th></tr></thead><tbody>${html || `<tr><td colspan="10" class="note" style="text-align:left;padding:14px">Sem campanhas com gasto ou vendas neste período.</td></tr>`}</tbody></table>`;
   }
   function criativos(lista, bons) {
     return (lista || []).slice(0, 5).map((a, i) => `<div class="cr2" data-cr="${esc(a.plataforma)}:${esc(a.id)}">
       ${a.thumb ? `<img src="${esc(a.thumb)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',textContent:'🎬'}))">` : `<div class="ph">🎬</div>`}
-      <div style="min-width:0"><div class="n"><span class="rank">${bons ? "#" + (i + 1) : ""}</span>${esc(a.nome)}</div><div class="d">${esc(a.campanha)} · ${num(a.vendas)} venda(s) · gasto ${brl(a.gasto)} · lucro <span class="${cor(a.lucro)}">${brl(a.lucro)}</span> · ROI <span class="${cor(a.roi)}">${pct(a.roi, true)}</span></div></div>
+      <div style="min-width:0"><div class="n"><span class="rank">${bons ? "#" + (i + 1) : ""}</span>${esc(a.nome)}</div><div class="d"><span class="notr">${esc(a.campanha)}</span> · ${num(a.vendas)} venda(s) · gasto ${brl(a.gasto)} · lucro <span class="${cor(a.lucro)}">${brl(a.lucro)}</span> · ROI <span class="${cor(a.roi)}">${pct(a.roi, true)}</span></div></div>
       <div style="display:flex;gap:6px">${bons ? `<button class="btn sm" data-var="1" title="Gerar novas copies/roteiros a partir deste criativo">🎯 Variações</button>` : a.status === "ativo" ? `<button class="btn sm" data-acao-cr="pausar">⏸ Pausar</button>` : ""}${a.status === "pausado" ? `<span class="note">pausado</span>` : ""}</div></div>`).join("");
   }
   function tabelaSimples(lista, rotulo, max = 8) {
@@ -308,7 +319,7 @@
   function ultimas(lista) {
     if (!lista.length) return `<div class="note">Nenhuma venda neste período.</div>`;
     const met = { pix: "Pix", cartao: "Cartão", boleto: "Boleto" };
-    return `<div style="overflow:auto"><table class="at"><thead><tr><th>Quando</th><th style="text-align:left">Produto</th><th>Valor</th><th>Status</th><th>Pagamento</th><th style="text-align:left">Origem</th></tr></thead><tbody>${lista.map((v) => `<tr><td>${new Date(v.quando).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td><td style="text-align:left">${esc(v.produto)}${v.teste ? ` <span class="chip">teste</span>` : ""} <span class="note">${esc(v.checkout)}</span></td><td>${brl(v.valor)}</td><td><span class="st2 ${v.status}">${esc(v.status)}</span></td><td>${esc(met[v.metodo] || v.metodo || "–")}</td><td style="text-align:left"><span class="an" style="max-width:280px" title="${esc(v.campanha + (v.anuncio ? " › " + v.anuncio : ""))}">${esc(v.anuncio || v.campanha)}</span></td></tr>`).join("")}</tbody></table></div>`;
+    return `<div style="overflow:auto"><table class="at"><thead><tr><th>Quando</th><th style="text-align:left">Produto</th><th>Valor</th><th>Status</th><th>Pagamento</th><th style="text-align:left">Origem</th></tr></thead><tbody>${lista.map((v) => `<tr><td>${new Date(v.quando).toLocaleString(LOCD(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td><td style="text-align:left">${esc(v.produto)}${v.teste ? ` <span class="chip">teste</span>` : ""} <span class="note">${esc(v.checkout)}</span></td><td>${brl(v.valor)}</td><td><span class="st2 ${v.status}">${esc(v.status)}</span></td><td>${esc(met[v.metodo] || v.metodo || "–")}</td><td style="text-align:left"><span class="an" style="max-width:280px" title="${esc(v.campanha + (v.anuncio ? " › " + v.anuncio : ""))}">${esc(v.anuncio || v.campanha)}</span></td></tr>`).join("")}</tbody></table></div>`;
   }
   function desenharGrafico(r) {
     const cv = $("#aChart");
@@ -317,12 +328,12 @@
     const lab = r.porDia.map((d) => d.dia.slice(8, 10) + "/" + d.dia.slice(5, 7));
     S.chart = new Chart(cv, {
       data: { labels: lab, datasets: [
-        { type: "bar", label: "Faturamento líquido", data: r.porDia.map((d) => +d.liquido.toFixed(2)), backgroundColor: "rgba(34,197,94,.55)", borderRadius: 6, order: 2 },
-        { type: "bar", label: "Gasto", data: r.porDia.map((d) => +d.gasto.toFixed(2)), backgroundColor: "rgba(148,163,150,.35)", borderRadius: 6, order: 3 },
-        { type: "line", label: "Lucro", data: r.porDia.map((d) => +d.lucro.toFixed(2)), borderColor: "#86efac", backgroundColor: "#86efac", tension: 0.3, pointRadius: 3, order: 1 },
+        { type: "bar", label: T("Faturamento líquido"), data: r.porDia.map((d) => +d.liquido.toFixed(2)), backgroundColor: "rgba(34,197,94,.55)", borderRadius: 6, order: 2 },
+        { type: "bar", label: T("Gasto"), data: r.porDia.map((d) => +d.gasto.toFixed(2)), backgroundColor: "rgba(148,163,150,.35)", borderRadius: 6, order: 3 },
+        { type: "line", label: T("Lucro"), data: r.porDia.map((d) => +d.lucro.toFixed(2)), borderColor: "#86efac", backgroundColor: "#86efac", tension: 0.3, pointRadius: 3, order: 1 },
       ] },
       options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { labels: { color: "#8fa595", boxWidth: 12 } }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${brl(c.parsed.y)}` } } },
-        scales: { x: { ticks: { color: "#8fa595" }, grid: { color: "rgba(255,255,255,.04)" } }, y: { ticks: { color: "#8fa595", callback: (v) => "R$ " + Number(v).toLocaleString("pt-BR") }, grid: { color: "rgba(255,255,255,.06)" } } } },
+        scales: { x: { ticks: { color: "#8fa595" }, grid: { color: "rgba(255,255,255,.04)" } }, y: { ticks: { color: "#8fa595", callback: (v) => "R$ " + Number(v).toLocaleString(LOCD()) }, grid: { color: "rgba(255,255,255,.06)" } } } },
     });
   }
   function acharItem(plat, id, nivel) {
@@ -391,6 +402,7 @@
   }
 
   // ---------- INTEGRAÇÕES ----------
+  const SR = { reg: LS.get("regiao", "br") };
   async function vIntegracoes() {
     corpo(`<div class="acard"><div class="spin" style="display:inline-block"></div> Carregando…</div>`);
     try { S.integ = await api("/api/analytics/integracoes"); } catch (e) { toast(e.message, true); return; }
@@ -412,9 +424,10 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="iUrl" placeholder="https://debian-webhooks.seu-nome.workers.dev" value="${esc(I.workerUrl || "")}" style="max-width:520px"><button class="btn sm primary" id="iTestar">Testar e salvar</button></div>
         ${st.erroSync ? `<div class="bad3" style="margin-top:8px">⚠️ ${esc(st.erroSync)}</div>` : ""}
       </div>
-      <div class="step"><h3>2. Webhooks do checkout</h3><p>Cole a URL da sua plataforma no painel dela. Uma URL por plataforma.</p>
+      <div class="step"><h3>2. Webhooks do checkout ou gateway de pagamento</h3><p>Cole a URL da sua plataforma no painel dela. Uma URL por plataforma. Funciona com checkouts e gateways do Brasil, dos EUA e da Europa.</p>
         ${!I.workerUrl ? `<div class="warn">Termine o passo 1 primeiro. Sem o endereço do receptor, as URLs abaixo não funcionam.</div>` : ""}
-        ${I.webhooks.map((w) => `<div class="wh"><b>${esc(w.nome)}</b><code id="wh-${esc(w.id)}" title="${esc(w.url)}">${esc(w.url)}</code><button class="btn sm" data-copy="#wh-${esc(w.id)}">Copiar</button><div class="o">${esc(w.onde)}</div></div>`).join("")}
+        <div class="reg" id="iReg">${[["br", "🇧🇷 Brasil"], ["global", "🌎 Global"], ["us", "🇺🇸 EUA"], ["eu", "🇪🇺 Europa"]].map(([k, n]) => `<button data-reg="${k}" class="${SR.reg === k ? "on" : ""}">${n}</button>`).join("")}</div>
+        ${I.webhooks.filter((w) => w.regiao === SR.reg || (SR.reg !== "global" && w.id === "generico")).map((w) => `<div class="wh"><b>${esc(w.nome)}</b><code id="wh-${esc(w.id)}" title="${esc(w.url)}">${esc(w.url)}</code><button class="btn sm" data-copy="#wh-${esc(w.id)}">Copiar</button><div class="o">${esc(w.onde)}</div></div>`).join("")}
       </div>
       <div class="step"><h3>3. UTMs nos anúncios</h3><p>É isso que liga cada venda ao anúncio que trouxe a pessoa. Campanhas criadas pelo agente já saem com isso.</p>
         <b style="font-size:13px">Meta Ads</b>: no anúncio → Rastreamento → <b>Parâmetros de URL</b>:
@@ -422,34 +435,50 @@
         <div style="height:12px"></div>
         <b style="font-size:13px">Google Ads</b>: Configurações da conta/campanha → <b>Sufixo do URL final</b>:
         <div class="code" id="iUtmG" style="margin:6px 0">${esc(I.utmGoogle)}</div><button class="btn sm" data-copy="#iUtmG">Copiar</button>
+        <div style="height:12px"></div>
+        <b style="font-size:13px">TikTok Ads</b>: no anúncio → <b>Parâmetros de URL</b> (desligue os automáticos e cole):
+        <div class="code" id="iUtmT" style="margin:6px 0">${esc(I.utmTiktok)}</div><button class="btn sm" data-copy="#iUtmT">Copiar</button>
+        <div style="height:12px"></div>
+        <b style="font-size:13px">Kwai Ads</b>: no conjunto de anúncios → <b>URL</b>: cole depois do link da página (só vale em conjuntos novos):
+        <div class="code" id="iUtmK" style="margin:6px 0">?${esc(I.utmKwai)}</div><button class="btn sm" data-copy="#iUtmK">Copiar</button>
       </div>
       <div class="step"><h3>4. Script da página de vendas</h3><p>Cole antes do <code>&lt;/body&gt;</code> da sua página. Ele guarda as UTMs e repassa para o link do checkout, inclusive no <code>sck</code> que a Hotmart e a Cakto devolvem no webhook. Sem isso, as vendas que passam pela página chegam sem origem.</p>
         <div class="code" id="iScript">${esc(I.script)}</div><div style="margin-top:8px"><button class="btn sm" data-copy="#iScript">📋 Copiar script</button></div>
       </div>
-      <div class="step"><h3>5. Custos e segurança</h3>
+      <div class="step"><h3>5. Custos, moeda e segurança</h3>
         <div class="fg2">
           <div><label class="lb">Imposto sobre o faturamento (%)</label><input type="number" id="cImp" step="0.1" min="0" value="${esc(I.impostoPct)}"></div>
           <div><label class="lb">Outras taxas sobre o faturamento (%)</label><input type="number" id="cTax" step="0.1" min="0" value="${esc(I.taxaExtraPct)}"></div>
           <div><label class="lb">Custo fixo por venda (R$)</label><input type="number" id="cCusto" step="0.01" min="0" value="${esc(I.custoPorVenda)}"></div>
-          <div><label class="lb">Fuso horário dos relatórios</label><select id="cFuso">${["America/Sao_Paulo", "America/Manaus", "America/Fortaleza", "America/Cuiaba", "America/Rio_Branco", "America/Noronha", "Europe/Lisbon", "Europe/Kyiv", "America/New_York"].map((f) => `<option ${f === I.fuso ? "selected" : ""}>${f}</option>`).join("")}</select></div>
+          <div><label class="lb">Fuso horário dos relatórios</label><select id="cFuso">${["America/Sao_Paulo", "America/Manaus", "America/Fortaleza", "America/Cuiaba", "America/Rio_Branco", "America/Noronha", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Mexico_City", "America/Bogota", "America/Argentina/Buenos_Aires", "Europe/Lisbon", "Europe/London", "Europe/Madrid", "Europe/Paris", "Europe/Berlin", "Europe/Rome", "Europe/Amsterdam", "Europe/Warsaw", "Europe/Kyiv", "Asia/Dubai", "Australia/Sydney", "UTC"].map((f) => `<option ${f === I.fuso ? "selected" : ""}>${f}</option>`).join("")}</select></div>
           <div><label class="lb">Hottok da Hotmart (opcional)</label><input id="cHot" value="${esc(I.hottok || "")}" placeholder="confere se o aviso veio mesmo da Hotmart"></div>
           <div><label class="lb">Secret do webhook da Cakto (opcional)</label><input id="cCak" value="${esc(I.segredoCakto || "")}" placeholder="confere a assinatura da Cakto"></div>
+          <div><label class="lb">Access Token do Mercado Pago</label><input id="cMp" type="password" autocomplete="off" value="${esc(I.mercadoPagoToken || "")}" placeholder="APP_USR-…"></div>
+          <div><label class="lb">Secret Key do ClickBank</label><input id="cCbk" type="password" autocomplete="off" value="${esc(I.clickbankChave || "")}" placeholder="para ler os avisos criptografados"></div>
+          <div><label class="lb">Custo por chargeback (taxa da plataforma)</label><input type="number" id="cCb" step="0.01" min="0" value="${esc(I.custoChargeback || 0)}"></div>
+          <div><label class="lb">Moeda principal do painel</label><select id="cMoeda">${[["BRL", "R$ · Real"], ["USD", "US$ · Dólar"], ["EUR", "€ · Euro"], ["GBP", "£ · Libra"]].map(([k, n]) => `<option value="${k}" ${k === (I.moeda || "BRL") ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+          <div><label class="lb">Moeda das contas de anúncio</label><select id="cMoedaAds"><option value="">A mesma da moeda principal</option>${[["BRL", "R$ · Real"], ["USD", "US$ · Dólar"], ["EUR", "€ · Euro"], ["GBP", "£ · Libra"]].map(([k, n]) => `<option value="${k}" ${k === I.moedaAnuncios ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+          <div><label class="lb">Cotações: quanto vale 1 US$, 1 € e 1 £ em reais</label><div style="display:flex;gap:6px">${["USD", "EUR", "GBP"].map((m) => `<input type="number" step="0.01" min="0" data-cot="${m}" value="${esc((I.cotacoes || {})[m] ?? "")}" title="1 ${m} em R$" placeholder="${m}">`).join("")}</div></div>
         </div>
+        <div class="note" style="margin-top:8px">Vendas em outras moedas são convertidas para a moeda principal pelas cotações acima. O gasto dos anúncios também é convertido, a partir da moeda das contas de anúncio. Dica: troque a moeda a qualquer hora pelo seletor R$ · € · US$ no topo.</div>
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" id="cSalvar">Salvar</button><button class="btn sm" id="cNovos" title="Gera novas URLs e um novo código de Worker">🔑 Gerar novos segredos</button></div>
       </div>
       <div class="step"><h3>6. Testar</h3><p>Cria uma venda de teste ligada a um dos seus anúncios, para você ver o painel funcionando. Vendas de teste não entram nos números, a não ser que você marque “vendas de teste” no painel.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm primary" id="tSim">🧪 Simular uma venda</button><button class="btn sm" id="tApagar" ${I.vendasTeste ? "" : "disabled"}>Apagar vendas de teste (${I.vendasTeste})</button></div>
-        <div class="note" style="margin-top:10px">Vendas reais recebidas: <b>${num(I.totalVendas)}</b>${I.ultimaVenda ? ` · última em ${new Date(I.ultimaVenda).toLocaleString("pt-BR")}` : ""}</div>
-        ${I.ultimosEventos.length ? `<div style="margin-top:10px"><b style="font-size:13px">Últimos avisos recebidos</b>${I.ultimosEventos.map((e) => `<div class="note" style="margin-top:4px">${new Date(e.em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · <b>${esc(e.plataforma)}</b> · ${esc(e.resultado)}</div>`).join("")}</div>` : ""}
+        <div class="note" style="margin-top:10px">Vendas reais recebidas: <b>${num(I.totalVendas)}</b>${I.ultimaVenda ? ` · última em ${new Date(I.ultimaVenda).toLocaleString(LOCD())}` : ""}</div>
+        ${I.ultimosEventos.length ? `<div style="margin-top:10px"><b style="font-size:13px">Últimos avisos recebidos</b>${I.ultimosEventos.map((e) => `<div class="note" style="margin-top:4px">${new Date(e.em).toLocaleString(LOCD(), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · <b>${esc(e.plataforma)}</b> · ${esc(e.resultado)}</div>`).join("")}</div>` : ""}
       </div>
       <p class="note">🐉 Debian Analytics · Paid Traffic Agent</p>`);
     $("#aCorpo").onclick = async (e) => {
       const cp = e.target.closest("[data-copy]");
       if (cp) { try { await navigator.clipboard.writeText($(cp.dataset.copy).textContent); toast("Copiado ✓"); } catch { toast("Não consegui copiar. Selecione e copie manualmente.", true); } return; }
+      const rg = e.target.closest("[data-reg]");
+      if (rg) { SR.reg = rg.dataset.reg; LS.set("regiao", SR.reg); vIntegracoes(); }
     };
     $("#iTestar").onclick = async () => { try { await api("/api/analytics/testar", { body: { url: $("#iUrl").value } }); toast("Receptor conectado ✓"); vIntegracoes(); } catch (er) { toast(er.message, true); } };
     $("#cSalvar").onclick = async () => {
-      try { await api("/api/analytics/config", { body: { impostoPct: Number($("#cImp").value) || 0, taxaExtraPct: Number($("#cTax").value) || 0, custoPorVenda: Number($("#cCusto").value) || 0, fuso: $("#cFuso").value, hottok: $("#cHot").value.trim(), segredoCakto: $("#cCak").value.trim() } }); toast("Salvo ✓"); }
+      const cot = { BRL: 1 }; $$("[data-cot]").forEach((x) => { if (Number(x.value) > 0) cot[x.dataset.cot] = Number(x.value); });
+      try { await api("/api/analytics/config", { body: { impostoPct: Number($("#cImp").value) || 0, taxaExtraPct: Number($("#cTax").value) || 0, custoPorVenda: Number($("#cCusto").value) || 0, custoChargeback: Number($("#cCb").value) || 0, moeda: $("#cMoeda").value, moedaAnuncios: $("#cMoedaAds").value, cotacoes: cot, fuso: $("#cFuso").value, hottok: $("#cHot").value.trim(), segredoCakto: $("#cCak").value.trim(), mercadoPagoToken: $("#cMp").value.trim(), clickbankChave: $("#cCbk").value.trim() } }); window.MO_MOEDA = $("#cMoeda").value; toast("Salvo ✓"); }
       catch (er) { toast(er.message, true); }
     };
     $("#cNovos").onclick = async () => {
